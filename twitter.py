@@ -7,7 +7,7 @@ from __future__ import division
 from time import sleep
 
 import times
-import pypb.req as req
+import req
 
 # Constants
 RESET_BUFFER      = 60
