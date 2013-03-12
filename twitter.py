@@ -6,8 +6,11 @@ from __future__ import division
 
 from time import sleep
 
+from requests_oauthlib import OAuth1
+
 import times
 import req
+
 
 # Constants
 RESET_BUFFER      = 60
@@ -27,7 +30,7 @@ def check_rate_limit(r):
 
     try:
         # If we hit the rate limit sleep
-        remain = r.headers["x-ratelimit-remaining"]
+        remain = r.headers["x-rate-limit-remaining"]
         remain = int(remain)
         if remain <= RATE_LIMIT_BUFFER:
             log.debug("Hit rate limit - {}", remain)
@@ -36,7 +39,7 @@ def check_rate_limit(r):
             now   = times.parse(now)
             now   = times.to_unix(now)
 
-            reset = r.headers["x-ratelimit-reset"]
+            reset = r.headers["x-rate-limit-reset"]
             reset = int(reset)
 
             # Sleep past the reset time
@@ -47,7 +50,7 @@ def check_rate_limit(r):
         log.error("Header not found - {}", e)
         sleep(FAILURE_RETRY)
 
-def user_timeline(user_id):
+def user_timeline(user_id,client_key,client_secret,resource_owner_key,resource_owner_secret):
     """
     Get as many tweets from the user as possible.
 
@@ -55,7 +58,8 @@ def user_timeline(user_id):
     returns - A list of tweets for the given user. The list may be empty.
     """
 
-    url = "http://api.twitter.com/1/statuses/user_timeline.json"
+    url = "http://api.twitter.com/1.1/statuses/user_timeline.json"
+    headeroauth = OAuth1(client_key, client_secret,resource_owner_key, resource_owner_secret,signature_type='auth_header')
     params = {
         "user_id": user_id,
         "count": 200,
@@ -70,7 +74,7 @@ def user_timeline(user_id):
 
     tries = 0
     while tries < MAX_RETRY:
-        r = req.get(url, params=params, timeout=60.0)
+        r = req.get(url, params=params, auth=headeroauth, timeout=60.0)
 
         # Proper receive
         if r.status_code == 200:
@@ -123,7 +127,7 @@ def users_lookup(user_ids):
     returns  - A list of profiles for the given users. The list may not contain
                profiles for all the users.
     """
-
+    
     user_ids = map(str, user_ids)
     user_ids = ",".join(user_ids)
 
