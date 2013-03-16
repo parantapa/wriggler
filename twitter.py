@@ -3,9 +3,7 @@ Robust Twitter crawler primitives.
 """
 
 from __future__ import division
-
 from time import sleep
-
 from requests_oauthlib import OAuth1
 
 import times
@@ -50,7 +48,7 @@ def check_rate_limit(r):
         log.error("Header not found - {}", e)
         sleep(FAILURE_RETRY)
 
-def user_timeline(user_id,client_key,client_secret,resource_owner_key,resource_owner_secret):
+def user_timeline(user_id, token):
     """
     Get as many tweets from the user as possible.
 
@@ -59,7 +57,11 @@ def user_timeline(user_id,client_key,client_secret,resource_owner_key,resource_o
     """
 
     url = "http://api.twitter.com/1.1/statuses/user_timeline.json"
-    headeroauth = OAuth1(client_key, client_secret,resource_owner_key, resource_owner_secret,signature_type='auth_header')
+    headeroauth = OAuth1(client_key=token['client_key'], 
+                      client_secret=token['client_secret'],
+                      resource_owner_key=token['resource_owner_key'], 
+                      resource_owner_secret=token['resource_owner_secret'], 
+                      signature_type='auth_header')
     params = {
         "user_id": user_id,
         "count": 200,
@@ -75,7 +77,6 @@ def user_timeline(user_id,client_key,client_secret,resource_owner_key,resource_o
     tries = 0
     while tries < MAX_RETRY:
         r = req.get(url, params=params, auth=headeroauth, timeout=60.0)
-
         # Proper receive
         if r.status_code == 200:
             for tweet in r.json():
@@ -119,7 +120,7 @@ def user_timeline(user_id,client_key,client_secret,resource_owner_key,resource_o
     log.critical("Maximum retries exhausted ...")
     raise SystemExit()
 
-def users_lookup(user_ids):
+def users_lookup(user_ids, token):
     """
     Lookup profiles of as many users as possible.
 
@@ -127,11 +128,16 @@ def users_lookup(user_ids):
     returns  - A list of profiles for the given users. The list may not contain
                profiles for all the users.
     """
-    
+    headeroauth = OAuth1(client_key=token['client_key'], 
+                    client_secret=token['client_secret'],
+                    resource_owner_key=token['resource_owner_key'], 
+                    resource_owner_secret=token['resource_owner_secret'],
+                    signature_type='auth_header')    
+
     user_ids = map(str, user_ids)
     user_ids = ",".join(user_ids)
 
-    url = "http://api.twitter.com/1/users/lookup.json"
+    url = "http://api.twitter.com/1.1/users/lookup.json"
     params = {
         "user_id": user_ids,
         "include_entities": 1
@@ -139,7 +145,7 @@ def users_lookup(user_ids):
 
     tries = 0
     while tries < MAX_RETRY:
-        r = req.get(url, params=params, timeout=60.0)
+        r = req.get(url, params=params, auth=headeroauth, timeout=60.0)
 
         # Proper receive
         if r.status_code == 200:
@@ -171,7 +177,7 @@ def users_lookup(user_ids):
     log.critical("Maximum retries exhausted ...")
     raise SystemExit()
 
-def users_show(user_id):
+def users_show(user_id, token):
     """
     Get the profile of the given of the given user.
 
@@ -181,15 +187,20 @@ def users_show(user_id):
               profile will instead contain the reason of absence of the profile.
     """
 
-    url = "http://api.twitter.com/1/users/show.json"
+    url = "http://api.twitter.com/1.1/users/show.json"
     params = {
         "user_id": user_id,
         "include_entities": 1
     }
-
+    
+    headeroauth = OAuth1(client_key=token['client_key'], 
+                    client_secret=token['client_secret'],
+                    resource_owner_key=token['resource_owner_key'], 
+                    resource_owner_secret=token['resource_owner_secret'],
+                    signature_type='auth_header')
     tries = 0
     while tries < MAX_RETRY:
-        r = req.get(url, params=params, timeout=60.0)
+        r = req.get(url, params=params, auth=headeroauth, timeout=60.0)
 
         # Proper receive
         if r.status_code == 200:
