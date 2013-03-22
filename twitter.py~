@@ -3,9 +3,7 @@ Robust Twitter crawler primitives.
 """
 
 from __future__ import division
-
 from time import sleep
-
 from requests_oauthlib import OAuth1
 
 import times
@@ -49,57 +47,6 @@ def check_rate_limit(r):
         # We dont have the proper headers
         log.error("Header not found - {}", e)
         sleep(FAILURE_RETRY)
-def public_stream (param, token):
-    """
-    To collect tweets using public stream.
-
-    param - A list of the field based on which tweets needs to be collected
-    token - A list containing client_key, client_secret , resource_owner_key, resource_owner_secret
-    """
-     
-    url = "http://stream.twitter.com/1.1/statuses/filter.json"
-    headeroauth = OAuth1(signature_type='auth_header', **token)
-    tries = 0
-    while tries < MAX_RETRY:
-        r = req.get(url, auth=headeroauth, timeout=60.0, **param)
-
-        if r.status_code == 200:
-            backoff = 5
-            t = r.json()
-            for tweets in t:
-                if tweets: # filter out keep-alive new lines
-                    yield tweets
-
-        # timeout or server unavailable
-        if r.status_code in (503, 504):
-            log.info(u"Try {}: Being throttled - {} {}",
-                      tries, r.status_code, r.text)
-            backoff = backoff * 5
-            sleep(backoff)
-            tries += 1
-            continue
-
-        if r.status_code == 420:
-            backoff = backoff*2
-            sleep(backoff)
-            tries += 1
-         
-	# Check if rate limited
-        if r.status_code == 400:
-            log.info(u"Try {}: Being throttled - {} {}",
-                      tries, r.status_code, r.text)
-            check_rate_limit(r)
-            tries += 1
-            continue
-
-        # Dont expect anything else
-        log.warn(u"Try {}: Unexepectd response - {} {}",
-                 tries, r.status_code, r.text)
-        
-        tries += 1
-        check_rate_limit(r)
-        continue
-
 
 def user_timeline(user_id, token):
     """
@@ -110,7 +57,11 @@ def user_timeline(user_id, token):
     """
 
     url = "http://api.twitter.com/1.1/statuses/user_timeline.json"
-    headeroauth = OAuth1(signature_type='auth_header', **token)
+    headeroauth = OAuth1(client_key=token['client_key'], 
+                      client_secret=token['client_secret'],
+                      resource_owner_key=token['resource_owner_key'], 
+                      resource_owner_secret=token['resource_owner_secret'], 
+                      signature_type='auth_header')
     params = {
         "user_id": user_id,
         "count": 200,
@@ -177,7 +128,11 @@ def users_lookup(user_ids, token):
     returns  - A list of profiles for the given users. The list may not contain
                profiles for all the users.
     """
-    headeroauth = OAuth1(signature_type='auth_header', **token)    
+    headeroauth = OAuth1(client_key=token['client_key'], 
+                    client_secret=token['client_secret'],
+                    resource_owner_key=token['resource_owner_key'], 
+                    resource_owner_secret=token['resource_owner_secret'],
+                    signature_type='auth_header')    
 
     user_ids = map(str, user_ids)
     user_ids = ",".join(user_ids)
@@ -238,7 +193,11 @@ def users_show(user_id, token):
         "include_entities": 1
     }
     
-    headeroauth = OAuth1( signature_type='auth_header', **token)
+    headeroauth = OAuth1(client_key=token['client_key'], 
+                    client_secret=token['client_secret'],
+                    resource_owner_key=token['resource_owner_key'], 
+                    resource_owner_secret=token['resource_owner_secret'],
+                    signature_type='auth_header')
     tries = 0
     while tries < MAX_RETRY:
         r = req.get(url, params=params, auth=headeroauth, timeout=60.0)
