@@ -17,10 +17,32 @@ RESET_BUFFER      = 60
 RATE_LIMIT_BUFFER = 5
 FAILURE_RETRY     = 60
 MAX_RETRY         = 24 * 60
+WAIT_TIME         = 60
+FAILURE_WAIT      = 5
 
 from logbook import Logger
 log = Logger(__name__)
 
+def stream_rate_limit(r, count):
+    """
+    Check the rate limit and sleep off if it is hit.
+
+    r - The response object from requests.
+    """
+    # In case of rate limit back off exponentially, 
+    # start with a 1 minute wait and double each attempt.
+    if (r.status_code == 420):
+        sleeptime = WAIT_TIME ** count
+        count = count * 2
+        sleep(sleeptime)
+    # In case of other http error back off exponentially 
+    # starting with 5 seconds doubling each attempt, up to 320 seconds.
+    else:
+        sleeptime = min(FAILURE_WAIT ** count, 320)
+        count = count * 2
+        sleep(sleeptime)
+
+        
 def check_rate_limit(r):
     """
     Check the rate limit and sleep off if it is hit.
@@ -49,56 +71,33 @@ def check_rate_limit(r):
         # We dont have the proper headers
         log.error("Header not found - {}", e)
         sleep(FAILURE_RETRY)
-def public_stream (param, token):
+
+def public_stream (token):
     """
     To collect tweets using public stream.
 
     param - A list of the field based on which tweets needs to be collected
     token - A list containing client_key, client_secret , resource_owner_key, resource_owner_secret
     """
-     
-    url = "http://stream.twitter.com/1.1/statuses/filter.json"
+    count = 1
+    httpcount = 1
+    url = "https://stream.twitter.com/1.1/statuses/sample.json"
     headeroauth = OAuth1(signature_type='auth_header', **token)
-    tries = 0
-    while tries < MAX_RETRY:
-        r = req.get(url, auth=headeroauth, timeout=60.0, **param)
-
+    while True:
+        r = req.get(url, auth=headeroauth, timeout=90.0, stream=True)
         if r.status_code == 200:
-            backoff = 5
-            t = r.json()
-            for tweets in t:
-                if tweets: # filter out keep-alive new lines
-                    yield tweets
-
-        # timeout or server unavailable
-        if r.status_code in (503, 504):
-            log.info(u"Try {}: Being throttled - {} {}",
-                      tries, r.status_code, r.text)
-            backoff = backoff * 5
-            sleep(backoff)
-            tries += 1
-            continue
-
+            count = 1
+            httpcount =1
+            for tweet in r.iter_lines():
+                if tweet: 
+                    yield tweet
         if r.status_code == 420:
-            backoff = backoff*2
-            sleep(backoff)
-            tries += 1
-         
-	# Check if rate limited
-        if r.status_code == 400:
-            log.info(u"Try {}: Being throttled - {} {}",
-                      tries, r.status_code, r.text)
-            check_rate_limit(r)
-            tries += 1
-            continue
-
-        # Dont expect anything else
-        log.warn(u"Try {}: Unexepectd response - {} {}",
-                 tries, r.status_code, r.text)
-        
-        tries += 1
-        check_rate_limit(r)
+            stream_rate_limit(r, count)
+        else:
+            stream_rate_limit(r, httpcount)
         continue
+
+    raise SystemExit()
 
 
 def user_timeline(user_id, token):
