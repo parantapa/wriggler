@@ -32,14 +32,14 @@ def stream_rate_limit(r, count):
     # In case of rate limit back off exponentially, 
     # start with a 1 minute wait and double each attempt.
     if (r.status_code == 420):
-        sleeptime = WAIT_TIME ** count
-        count = count * 2
+        sleeptime = WAIT_TIME ** count[0]
+        count[0] = count[0] * 2
         sleep(sleeptime)
     # In case of other http error back off exponentially 
     # starting with 5 seconds doubling each attempt, up to 320 seconds.
     else:
-        sleeptime = min(FAILURE_WAIT ** count, 320)
-        count = count * 2
+        sleeptime = min(FAILURE_WAIT ** count[0], 320)
+        count[0] = count[0] * 2
         sleep(sleeptime)
 
         
@@ -79,15 +79,17 @@ def public_stream (token):
     param - A list of the field based on which tweets needs to be collected
     token - A list containing client_key, client_secret , resource_owner_key, resource_owner_secret
     """
-    count = 1
-    httpcount = 1
+    count = []
+    httpcount = []
+    count.append(1)
+    httpcount.append(1)
     url = "https://stream.twitter.com/1.1/statuses/sample.json"
     headeroauth = OAuth1(signature_type='auth_header', **token)
     while True:
         r = req.get(url, auth=headeroauth, timeout=90.0, stream=True)
         if r.status_code == 200:
-            count = 1
-            httpcount =1
+            count[0] = 1
+            httpcount[0] = 1
             for tweet in r.iter_lines():
                 if tweet: 
                     yield tweet
