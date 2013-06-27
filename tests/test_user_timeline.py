@@ -10,7 +10,7 @@ def main():
     Test the user timeline method.
     """
 
-    user_id = 10778222
+    user_id = 813286
     tweets = twitter.user_timeline(user_id, token)
 
     for tweet in tweets:

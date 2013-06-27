@@ -148,58 +148,56 @@ def user_timeline(user_id, auth):
     log.critical("Maximum retries exhausted ...")
     raise SystemExit()
 
-#def users_lookup(user_ids, token):
-    #"""
-    #Lookup profiles of as many users as possible.
+def users_lookup(user_ids, auth):
+    """
+    Lookup profiles of as many users as possible.
 
-    #user_ids - A list of user_ids of twitter users (max 100).
-    #returns  - A list of profiles for the given users. The list may not contain
-               #profiles for all the users.
-    #"""
-    #headeroauth = OAuth1(signature_type='auth_header', **token)
+    user_ids - A list of Twitter user_ids (max 100).
 
-    #user_ids = map(str, user_ids)
-    #user_ids = ",".join(user_ids)
+    Returns a iterable of user profiles. Not all profiles of the users may be
+    returned. Twitter lookup api drops user profiles randomly.
+    """
 
-    #url = "http://api.twitter.com/1.1/users/lookup.json"
-    #params = {
-        #"user_id": user_ids,
-        #"include_entities": 1
-    #}
+    user_ids = map(str, user_ids)
+    user_ids = ",".join(user_ids)
 
-    #tries = 0
-    #while tries < MAX_RETRY:
-        #r = req.get(url, params=params, auth=headeroauth, timeout=60.0)
+    endpoint = "https://api.twitter.com/1.1/users/lookup.json"
+    auth = OAuth1(signature_type="auth_header", **auth)
+    params = { "user_id": user_ids, "include_entities": 1 }
 
-        ## Proper receive
-        #if r.status_code == 200:
-            #check_rate_limit(r)
-            #return r.json()
+    tries = 0
+    while tries < RETRY_MAX:
+        r = req.get(endpoint, params=params, auth=auth, timeout=60.0)
 
-        ## User doesn't exist
-        #if r.status_code in (403, 404):
-            #log.info(u"Try {}: User doesn't exist - {} {}",
-                     #tries, r.status_code, r.text)
-            #check_rate_limit(r)
-            #return []
+        # Proper receive
+        if r.status_code == 200:
+            rest_rate_limit(r)
+            return r.json()
 
-        ## Check if rate limited
-        #if r.status_code == 400:
-            #log.info(u"Try {}: Being throttled - {} {}",
-                     #tries, r.status_code, r.text)
-            #check_rate_limit(r)
-            #tries += 1
-            #continue
+        # User doesn't exist
+        if r.status_code in (403, 404):
+            log.info(u"Try {}: User doesn't exist - {} {}",
+                     tries, r.status_code, r.text)
+            rest_rate_limit(r)
+            return []
 
-        ## Dont expect anything else
-        #log.warn(u"Try {}: Unexepectd response - {} {}",
-                 #tries, r.status_code, r.text)
-        #check_rate_limit(r)
-        #tries += 1
-        #continue
+        # Check if rate limited
+        if r.status_code == 429:
+            log.info(u"Try {}: Being throttled - {} {}",
+                     tries, r.status_code, r.text)
+            rest_rate_limit(r)
+            tries += 1
+            continue
 
-    #log.critical("Maximum retries exhausted ...")
-    #raise SystemExit()
+        # Dont expect anything else
+        log.warn(u"Try {}: Unexepectd response - {} {}",
+                 tries, r.status_code, r.text)
+        rest_rate_limit(r)
+        tries += 1
+        continue
+
+    log.critical("Maximum retries exhausted ...")
+    raise SystemExit()
 
 #def users_show(user_id, token):
     #"""
