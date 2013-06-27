@@ -214,7 +214,6 @@ def user_show(user_id, auth):
     auth = OAuth1(signature_type="auth_header", **auth)
     params = { "user_id": user_id, "include_entities": 1 }
 
-
     tries = 0
     while tries < RETRY_MAX:
         r = req.get(endpoint, params=params, auth=auth, timeout=60.0)
@@ -228,6 +227,58 @@ def user_show(user_id, auth):
         if r.status_code in (403, 404):
             rest_rate_limit(r)
             return (r.status_code, r.json())
+
+        # Check if rate limited
+        if r.status_code == 429:
+            log.info(u"Try {}: Being throttled - {} {}",
+                     tries, r.status_code, r.text)
+            rest_rate_limit(r)
+            tries += 1
+            continue
+
+        # Dont expect anything else
+        log.warn(u"Try {}: Unexepectd response - {} {}",
+                 tries, r.status_code, r.text)
+        rest_rate_limit(r)
+        tries += 1
+        continue
+
+    log.critical("Maximum retries exhausted ...")
+    raise SystemExit()
+
+def friend_ids(user_id, auth):
+    """
+    Get the friend of a single Twitter user.
+
+    user_id - A user_id of a single Twitter user.
+
+    Returns a list of user_ids of users who have been followed by the user.
+    """
+
+    endpoint = "https://api.twitter.com/1.1/friends/ids.json"
+    auth = OAuth1(signature_type="auth_header", **auth)
+    params = { "user_id": user_id, "count": 5000 }
+
+    friends = []
+
+    tries = 0
+    nextpage = -1
+    while tries < RETRY_MAX:
+        params["cursor"] = nextpage
+        r = req.get(endpoint, params=params, auth=auth, timeout=60.0)
+
+        # Proper receive
+        if r.status_code == 200:
+            friends.extend(r.json()["ids"])
+            nextpage = r.json()["next_cursor"]
+            rest_rate_limit(r)
+            if nextpage == 0:
+                return friends
+        
+        # User doesn't exist
+        if r.status_code in (403, 404):
+            rest_rate_limit(r)
+            return []
 
         # Check if rate limited
         if r.status_code == 429:
