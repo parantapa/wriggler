@@ -199,52 +199,51 @@ def users_lookup(user_ids, auth):
     log.critical("Maximum retries exhausted ...")
     raise SystemExit()
 
-#def users_show(user_id, token):
-    #"""
-    #Get the profile of the given of the given user.
+def user_show(user_id, auth):
+    """
+    Get the profile a single Twitter user.
 
-    #user_id - A user_id of a single twitter user.
-    #return  - A 2 tuple. First is the status code returned by Twitter, second is
-              #the profile of the Twitter user. If status code is 403 or 403, the
-              #profile will instead contain the reason of absence of the profile.
-    #"""
+    user_id - A user_id of a single Twitter user.
 
-    #url = "http://api.twitter.com/1.1/users/show.json"
-    #params = {
-        #"user_id": user_id,
-        #"include_entities": 1
-    #}
+    Returns a two tuple. First is the status code returned by Twitter, second is
+    the profile of the Twitter user. If status code is 403 or 403, the second
+    atrribute will instead contain the reason of absence of the profile.
+    """
 
-    #headeroauth = OAuth1( signature_type='auth_header', **token)
-    #tries = 0
-    #while tries < MAX_RETRY:
-        #r = req.get(url, params=params, auth=headeroauth, timeout=60.0)
+    endpoint = "https://api.twitter.com/1.1/users/show.json"
+    auth = OAuth1(signature_type="auth_header", **auth)
+    params = { "user_id": user_id, "include_entities": 1 }
 
-        ## Proper receive
-        #if r.status_code == 200:
-            #check_rate_limit(r)
-            #return (200, r.json())
 
-        ## User doesn't exist
-        #if r.status_code in (403, 404):
-            #check_rate_limit(r)
-            #return (r.status_code, r.json())
+    tries = 0
+    while tries < RETRY_MAX:
+        r = req.get(endpoint, params=params, auth=auth, timeout=60.0)
 
-        ## Check if rate limited
-        #if r.status_code == 400:
-            #log.info(u"Try {}: Being throttled - {} {}",
-                     #tries, r.status_code, r.text)
-            #check_rate_limit(r)
-            #tries += 1
-            #continue
+        # Proper receive
+        if r.status_code == 200:
+            rest_rate_limit(r)
+            return (200, r.json())
 
-        ## Dont expect anything else
-        #log.warn(u"Try {}: Unexepectd response - {} {}",
-                 #tries, r.status_code, r.text)
-        #check_rate_limit(r)
-        #tries += 1
-        #continue
+        # User doesn't exist
+        if r.status_code in (403, 404):
+            rest_rate_limit(r)
+            return (r.status_code, r.json())
 
-    #log.critical("Maximum retries exhausted ...")
-    #raise SystemExit()
+        # Check if rate limited
+        if r.status_code == 429:
+            log.info(u"Try {}: Being throttled - {} {}",
+                     tries, r.status_code, r.text)
+            rest_rate_limit(r)
+            tries += 1
+            continue
+
+        # Dont expect anything else
+        log.warn(u"Try {}: Unexepectd response - {} {}",
+                 tries, r.status_code, r.text)
+        rest_rate_limit(r)
+        tries += 1
+        continue
+
+    log.critical("Maximum retries exhausted ...")
+    raise SystemExit()
 
