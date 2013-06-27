@@ -1,23 +1,24 @@
 """
-Wrapper over requests library for being robust.
+A simple and robust way for making http requests.
+
+This library wraps python-requests. The errors handled by this module are
+connection requests and server side errors. The error handling strategy
+is quite simple. Wait for fixed number of seconds on error and then retry.
 """
 
-from __future__ import division
-
+import requests
 from time import sleep
 
-import requests
-
 GIVE_UP_AFTER = 24 * 3600
-RETRY_AFTER   = 15
-RETRY_MAX     = int(GIVE_UP_AFTER / RETRY_AFTER)
+RETRY_AFTER   = 10
+RETRY_MAX     = GIVE_UP_AFTER // RETRY_AFTER
 
 from logbook import Logger
 log = Logger(__name__)
 
 class Error(Exception):
     """
-    Robust request error.
+    Raised on error cases.
     """
 
 def robust_http(args, kwargs, method):
@@ -30,14 +31,14 @@ def robust_http(args, kwargs, method):
         try:
             return method(*args, **kwargs)
         except requests.RequestException as e:
-            log.info("Try: {} - Get Failed: {}: {}", tries, type(e), e)
+            log.info(u"Try: {} - Get Failed: {}: {}", tries, type(e), e)
             sleep(RETRY_AFTER)
         except Exception as e:
-            log.warn("Try: {} - Get Failed: {}: {}", tries, type(e), e)
+            log.warn(u"Try: {} - Get Failed: {}: {}", tries, type(e), e)
             sleep(RETRY_AFTER)
 
     # Cant help any more; Quit program
-    msg = "Maximum retry limit execeded, Exiting"
+    msg = "Falied to make http request!"
     log.critical(msg)
     raise Error(msg)
 
@@ -56,22 +57,22 @@ def checked_http(args, kwargs, method):
 
         # Bad client request, can't handle here
         if 400 <= r.status_code < 500:
-            log.info("Try: {}, Code {}: Client Error", tries, r.status_code)
+            log.info(u"Try: {}, Code {}: Client Error", tries, r.status_code)
             return r
 
         # Server problem retry
         if 500 <= r.status_code < 600:
-            log.info("Try: {}, Code {}: Server Error", tries, r.status_code)
+            log.info(u"Try: {}, Code {}: Server Error", tries, r.status_code)
             sleep(RETRY_AFTER)
             continue
 
         # Unknown response
-        log.warn("Try: {}, Code {}: Unexpected Error", tries, r.status_code)
+        log.warn(u"Try: {}, Code {}: Unexpected Error", tries, r.status_code)
         sleep(RETRY_AFTER)
         continue
 
     # Cant help any more; Quit program
-    msg = "Maximum retry limit execeded, Exiting"
+    msg = "Server kept failing!"
     log.critical(msg)
     raise Error(msg)
 
