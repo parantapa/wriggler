@@ -5,9 +5,10 @@ Robust Twitter crawler primitives.
 import json
 from time import sleep
 
-import req
 import times
 from requests_oauthlib import OAuth1
+
+import pypb.req as req
 
 # Constants
 RESET_BUFFER      = 5
