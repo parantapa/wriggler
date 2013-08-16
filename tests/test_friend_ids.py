@@ -2,6 +2,9 @@
 Test the users_lookup api.
 """
 
+import sys
+sys.path.append(".")
+
 import twitter
 from testauth import token
 

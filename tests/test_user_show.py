@@ -2,6 +2,9 @@
 Test the user_show api.
 """
 
+import sys
+sys.path.append(".")
+
 import twitter
 from testauth import token
 
