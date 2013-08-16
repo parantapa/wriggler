@@ -2,6 +2,7 @@
 Robust Twitter crawler primitives.
 """
 
+import json
 from time import sleep
 
 import req
@@ -16,25 +17,6 @@ RETRY_MAX         = 120
 
 from logbook import Logger
 log = Logger(__name__)
-
-#def stream_rate_limit(r, count):
-    #"""
-    #Check the rate limit and sleep off if it is hit.
-
-    #r - The response object from requests.
-    #"""
-    ## In case of rate limit back off exponentially,
-    ## start with a 1 minute wait and double each attempt.
-    #if (r.status_code == 420):
-        #sleeptime = WAIT_TIME ** count[0]
-        #count[0] = count[0] * 2
-        #sleep(sleeptime)
-    ## In case of other http error back off exponentially
-    ## starting with 5 seconds doubling each attempt, up to 320 seconds.
-    #else:
-        #sleeptime = min(FAILURE_WAIT ** count[0], 320)
-        #count[0] = count[0] * 2
-        #sleep(sleeptime)
 
 def rest_rate_limit(r):
     """
@@ -57,34 +39,31 @@ def rest_rate_limit(r):
         log.debug("Rate limit reset in {} seconds", reset - curtime)
         sleep(reset - curtime + RESET_BUFFER)
 
-#def public_stream (token):
-    #"""
-    #To collect tweets using public stream.
+def statuses_sample(auth):
+    """
+    Collect the twitter public stream.
 
-    #param - A list of the field based on which tweets needs to be collected
-    #token - A list containing client_key, client_secret , resource_owner_key, resource_owner_secret
-    #"""
-    #count = []
-    #httpcount = []
-    #count.append(1)
-    #httpcount.append(1)
-    #url = "https://stream.twitter.com/1.1/statuses/sample.json"
-    #headeroauth = OAuth1(signature_type='auth_header', **token)
-    #while True:
-        #r = req.get(url, auth=headeroauth, timeout=90.0, stream=True)
-        #if r.status_code == 200:
-            #count[0] = 1
-            #httpcount[0] = 1
-            #for tweet in r.iter_lines():
-                #if tweet:
-                    #yield tweet
-        #if r.status_code == 420:
-            #stream_rate_limit(r, count)
-        #else:
-            #stream_rate_limit(r, httpcount)
-        #continue
+    Constantly yields data from the streaming api. Will reconnect the stream
+    if it gets disconnected.
+    """
 
-    #raise SystemExit()
+    endpoint = "https://stream.twitter.com/1.1/statuses/sample.json"
+    auth = OAuth1(signature_type="auth_header", **auth)
+    params = {"delimited": 0, "stall_warnings": 1}
+
+    while True:
+        r = req.get(endpoint, params=params, auth=auth, timeout=60.0, stream=True)
+
+        if r.status_code == 200:
+            for line in r.iter_lines():
+                if line:
+                    yield json.loads(line)
+            continue
+    
+        # Dont expect anything else
+        msg = u"Unexepectd response - {}"
+        log.warn(msg, r.status_code)
+        sleep(RETRY_AFTER)
 
 def user_timeline(user_id, auth):
     """
