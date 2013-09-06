@@ -66,7 +66,7 @@ def statuses_sample(auth):
         log.warn(msg, r.status_code)
         sleep(RETRY_AFTER)
 
-def user_timeline(user_id, auth):
+def user_timeline(user_id, auth, maxtweets=3200):
     """
     Get as many tweets from the user as possible.
 
@@ -85,6 +85,9 @@ def user_timeline(user_id, auth):
 
     tries = 0
     while tries < RETRY_MAX:
+        if tcount >= maxtweets:
+            return tweets.itervalues()
+
         r = req.get(endpoint, params=params, auth=auth, timeout=60.0)
 
         # Proper receive
