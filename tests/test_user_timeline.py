@@ -14,10 +14,11 @@ def main():
     """
 
     user_id = 813286
-    tweets = twitter.user_timeline(user_id, token, 200)
+    tweets = twitter.user_timeline(user_id, token)
 
     for tweet in tweets:
-        print u"@{} - {}".format(tweet["user"]["screen_name"], tweet["text"])
+        line = u"@{} - {}".format(tweet["user"]["screen_name"], tweet["text"])
+        print line.encode("utf-8")
 
 if __name__ == "__main__":
     main()

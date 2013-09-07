@@ -90,25 +90,27 @@ def user_timeline(user_id, auth, maxtweets=sys.maxsize):
     auth = OAuth1(signature_type="auth_header", **auth)
     params = { "user_id": user_id, "count": 200, "include_rts": 1}
 
-    # We gather all tweets here
-    tweets = {}
+    # We gather all tweet ids here
+    tweets = set()
     tcount = 0
 
     tries = 0
     while tries < RETRY_MAX:
         if tcount >= maxtweets:
-            return tweets.itervalues()
+            return
 
         r = req.get(endpoint, params=params, auth=auth, timeout=60.0)
 
         # Proper receive
         if r.status_code == 200:
             for tweet in r.json():
-                tweets[tweet["id"]] = tweet
+                if tweet["id"] not in tweets:
+                    tweets.add(tweet["id"])
+                    yield tweet
 
             # If we have not added any more tweets; return
             if len(tweets) == tcount:
-                return tweets.itervalues()
+                return
             tcount = len(tweets)
 
             # Set the new max_id value
@@ -130,7 +132,7 @@ def user_timeline(user_id, auth, maxtweets=sys.maxsize):
             log.info(u"Try {}: User doesn't exist - {} {}",
                      tries, r.status_code, r.text)
             rest_rate_limit(r)
-            return []
+            return
 
         # Dont expect anything else
         log.warn(u"Try {}: Unexepectd response - {} {}",
