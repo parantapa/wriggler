@@ -242,7 +242,7 @@ def user_show(user_id, auth):
     log.critical("Maximum retries exhausted ...")
     raise RetryExhausted(user_id, auth)
 
-def _friend_or_follower_ids(endpoint, user_id, auth):
+def _friend_or_follower_ids(endpoint, user_id, auth, maxids):
     """
     Backend of friend_ids and follower_ids.
     """
@@ -261,6 +261,9 @@ def _friend_or_follower_ids(endpoint, user_id, auth):
         # Proper receive
         if r.status_code == 200:
             ids.extend(r.json()["ids"])
+            if len(ids) >= maxids:
+                return ids[:maxids]
+
             nextpage = r.json()["next_cursor"]
             rest_rate_limit(r)
             if nextpage == 0:
@@ -289,7 +292,7 @@ def _friend_or_follower_ids(endpoint, user_id, auth):
     log.critical("Maximum retries exhausted ...")
     raise RetryExhausted(user_id, auth)
 
-def friends_ids(user_id, auth):
+def friends_ids(user_id, auth, maxids=sys.maxsize):
     """
     Get the friends of a single Twitter user.
 
@@ -299,9 +302,9 @@ def friends_ids(user_id, auth):
     """
 
     endpoint = "https://api.twitter.com/1.1/friends/ids.json"
-    return _friend_or_follower_ids(endpoint, user_id, auth)
+    return _friend_or_follower_ids(endpoint, user_id, auth, maxids)
 
-def followers_ids(user_id, auth):
+def followers_ids(user_id, auth, maxids=sys.maxsize):
     """
     Get the followers of a single Twitter user.
 
@@ -311,7 +314,7 @@ def followers_ids(user_id, auth):
     """
 
     endpoint = "https://api.twitter.com/1.1/followers/ids.json"
-    return _friend_or_follower_ids(endpoint, user_id, auth)
+    return _friend_or_follower_ids(endpoint, user_id, auth, maxids)
 
 def search_tweets(query, result_type, auth, maxtweets=sys.maxsize):
     """
