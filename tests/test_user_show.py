@@ -17,10 +17,12 @@ def main():
     """
 
     user_id = 813286
-    status, profile = twitter.user_show(user_id, token)
+    status, profile = twitter.user_show(user_id, auth=token)
+    print status, profile["name"], "@" + profile["screen_name"]
 
-    print status
-    print profile
+    screen_name = "BarackObama"
+    status, profile = twitter.user_show(screen_name=screen_name, auth=token)
+    print status, profile["name"], "@" + profile["screen_name"]
 
 if __name__ == "__main__":
     main()

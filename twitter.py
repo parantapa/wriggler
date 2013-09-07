@@ -176,10 +176,10 @@ def users_lookup(user_ids=None, screen_names=None, auth=None):
     if user_ids is not None:
         user_ids = map(str, user_ids)
         user_ids = ",".join(user_ids)
-        params["user_ids"] = user_ids
+        params["user_id"] = user_ids
     if screen_names is not None:
         screen_names = ",".join(screen_names)
-        params["screen_names"] = screen_names
+        params["screen_name"] = screen_names
 
     tries = 0
     while tries < RETRY_MAX:
