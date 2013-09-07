@@ -13,11 +13,21 @@ import pypb.req as req
 # Constants
 RESET_BUFFER      = 5
 RATE_LIMIT_BUFFER = 1
-RETRY_AFTER       = 60
+RETRY_AFTER       = 5
 RETRY_MAX         = 120
 
 from logbook import Logger
 log = Logger(__name__)
+
+class Error(Exception):
+    """
+    Unrecoverable Error.
+    """
+
+class RetryExhausted(Error):
+    """
+    Maximum retry count exhausted.
+    """
 
 def rest_rate_limit(r):
     """
@@ -129,7 +139,7 @@ def user_timeline(user_id, auth, maxtweets=3200):
         continue
 
     log.critical("Maximum retries exhausted ...")
-    raise SystemExit()
+    raise RetryExhausted(user_id, auth, maxtweets)
 
 def users_lookup(user_ids, auth):
     """
@@ -180,7 +190,7 @@ def users_lookup(user_ids, auth):
         continue
 
     log.critical("Maximum retries exhausted ...")
-    raise SystemExit()
+    raise RetryExhausted(user_ids, auth)
 
 def user_show(user_id, auth):
     """
@@ -227,7 +237,7 @@ def user_show(user_id, auth):
         continue
 
     log.critical("Maximum retries exhausted ...")
-    raise SystemExit()
+    raise RetryExhausted(user_id, auth)
 
 def friend_ids(user_id, auth):
     """
@@ -279,5 +289,5 @@ def friend_ids(user_id, auth):
         continue
 
     log.critical("Maximum retries exhausted ...")
-    raise SystemExit()
+    raise RetryExhausted(user_id, auth)
 
