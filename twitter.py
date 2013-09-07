@@ -242,20 +242,15 @@ def user_show(user_id, auth):
     log.critical("Maximum retries exhausted ...")
     raise RetryExhausted(user_id, auth)
 
-def friend_ids(user_id, auth):
+def _friend_or_follower_ids(endpoint, user_id, auth):
     """
-    Get the friend of a single Twitter user.
-
-    user_id - A user_id of a single Twitter user.
-
-    Returns a list of user_ids of users who have been followed by the user.
+    Backend of friend_ids and follower_ids.
     """
 
-    endpoint = "https://api.twitter.com/1.1/friends/ids.json"
     auth = OAuth1(signature_type="auth_header", **auth)
     params = { "user_id": user_id, "count": 5000 }
 
-    friends = []
+    ids = []
 
     tries = 0
     nextpage = -1
@@ -265,11 +260,11 @@ def friend_ids(user_id, auth):
 
         # Proper receive
         if r.status_code == 200:
-            friends.extend(r.json()["ids"])
+            ids.extend(r.json()["ids"])
             nextpage = r.json()["next_cursor"]
             rest_rate_limit(r)
             if nextpage == 0:
-                return friends
+                return ids
         
         # User doesn't exist
         if r.status_code in (403, 404):
@@ -293,6 +288,30 @@ def friend_ids(user_id, auth):
 
     log.critical("Maximum retries exhausted ...")
     raise RetryExhausted(user_id, auth)
+
+def friends_ids(user_id, auth):
+    """
+    Get the friends of a single Twitter user.
+
+    user_id - A user_id of a single Twitter user.
+
+    Returns a list of user_ids of users who have been followed by the user.
+    """
+
+    endpoint = "https://api.twitter.com/1.1/friends/ids.json"
+    return _friend_or_follower_ids(endpoint, user_id, auth)
+
+def followers_ids(user_id, auth):
+    """
+    Get the followers of a single Twitter user.
+
+    user_id - A user_id of a single Twitter user.
+
+    Returns a list of user_ids of users who have followed the user.
+    """
+
+    endpoint = "https://api.twitter.com/1.1/followers/ids.json"
+    return _friend_or_follower_ids(endpoint, user_id, auth)
 
 def search_tweets(query, result_type, auth, maxtweets=sys.maxsize):
     """
