@@ -114,7 +114,7 @@ def user_timeline(user_id, auth, maxtweets=sys.maxsize):
             tcount = len(tweets)
 
             # Set the new max_id value
-            params["max_id"] = min(tweets)
+            params["max_id"] = min(tweets) - 1
             tries = 0
             rest_rate_limit(r)
             continue
@@ -332,30 +332,25 @@ def search_tweets(query, result_type, auth, maxtweets=sys.maxsize):
                "include_entities": "true" }
 
     # We gather all tweet ids here
-    tweets = set()
+    maxid = float("inf")
     tcount = 0
 
     tries = 0
     while tries < RETRY_MAX:
-        if tcount >= maxtweets:
-            return
-
         r = req.get(endpoint, params=params, auth=auth, timeout=60.0)
 
         # Proper receive
         if r.status_code == 200:
-            for tweet in r.json()["statuses"]:
-                if tweet["id"] not in tweets:
-                    tweets.add(tweet["id"])
-                    yield tweet
-
-            # If we have not added any more tweets; return
-            if len(tweets) == tcount:
-                return
-            tcount = len(tweets)
+            data = r.json()
+            for tweet in data["statuses"]:
+                yield tweet
+                maxid = min(tweet["id"], maxid)
+                tcount += 1
+                if tcount >= maxtweets:
+                    return
 
             # Set the new max_id value
-            params["max_id"] = min(tweets)
+            params["max_id"] = maxid - 1
             tries = 0
             rest_rate_limit(r)
             continue
