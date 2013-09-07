@@ -14,7 +14,7 @@ def main():
     """
 
     user_id = 813286
-    tweets = twitter.user_timeline(user_id, token)
+    tweets = twitter.user_timeline(user_id, token, 200)
 
     for tweet in tweets:
         print u"@{} - {}".format(tweet["user"]["screen_name"], tweet["text"])
