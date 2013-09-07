@@ -2,6 +2,7 @@
 Robust Twitter crawler primitives.
 """
 
+import sys
 import json
 from time import sleep
 
@@ -76,7 +77,7 @@ def statuses_sample(auth):
         log.warn(msg, r.status_code)
         sleep(RETRY_AFTER)
 
-def user_timeline(user_id, auth, maxtweets=3200):
+def user_timeline(user_id, auth, maxtweets=sys.maxsize):
     """
     Get as many tweets from the user as possible.
 
@@ -290,4 +291,64 @@ def friend_ids(user_id, auth):
 
     log.critical("Maximum retries exhausted ...")
     raise RetryExhausted(user_id, auth)
+
+def search_tweets(query, result_type, auth, maxtweets=sys.maxsize):
+    """
+    Get as many tweets from twitter search as possible.
+
+    query - The twitter search query
+    result_type - mixed, recent, popular
+
+    Returns an iterable of tweets.
+    """
+
+    endpoint = 'https://api.twitter.com/1.1/search/tweets.json'
+    auth = OAuth1(signature_type="auth_header", **auth)
+    params = { "q": query, "result_type": result_type, "count": 100,
+               "include_entities": "true" }
+
+    # We gather all tweets here
+    tweets = {}
+    tcount = 0
+
+    tries = 0
+    while tries < RETRY_MAX:
+        if tcount >= maxtweets:
+            return tweets.itervalues()
+
+        r = req.get(endpoint, params=params, auth=auth, timeout=60.0)
+
+        # Proper receive
+        if r.status_code == 200:
+            for tweet in r.json()["statuses"]:
+                tweets[tweet["id"]] = tweet
+
+            # If we have not added any more tweets; return
+            if len(tweets) == tcount:
+                return tweets.itervalues()
+            tcount = len(tweets)
+
+            # Set the new max_id value
+            params["max_id"] = min(tweets)
+            tries = 0
+            rest_rate_limit(r)
+            continue
+
+        # Check if rate limited
+        if r.status_code == 429:
+            log.info(u"Try {}: Being throttled - {} {}",
+                     tries, r.status_code, r.text)
+            rest_rate_limit(r)
+            tries += 1
+            continue
+
+        # Dont expect anything else
+        log.warn(u"Try {}: Unexepectd response - {} {}",
+                 tries, r.status_code, r.text)
+        rest_rate_limit(r)
+        tries += 1
+        continue
+
+    log.critical("Maximum retries exhausted ...")
+    raise RetryExhausted(query, result_type, auth, maxtweets=sys.maxsize)
 
