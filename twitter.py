@@ -77,18 +77,28 @@ def statuses_sample(auth):
         log.warn(msg, r.status_code)
         sleep(RETRY_AFTER)
 
-def user_timeline(user_id, auth, maxtweets=sys.maxsize):
+def user_timeline(user_id=None, screen_name=None, auth=None, maxtweets=sys.maxsize):
     """
     Get as many tweets from the user as possible.
 
     user_id - A single Twitter user_id.
+    screen_name - A single Twitter screen name.
+
+    NOTE: Only one of user_id or screen_name must be passed.
 
     Returns an iterable of tweets for the given user.
     """
 
+    assert bool(user_id is not None) != bool(screen_name is not None)
+    assert auth is not None
+
     endpoint = "https://api.twitter.com/1.1/statuses/user_timeline.json"
     auth = OAuth1(signature_type="auth_header", **auth)
-    params = { "user_id": user_id, "count": 200, "include_rts": 1}
+    params = { "count": 200, "include_rts": 1}
+    if user_id is not None:
+        params["user_id"] = user_id
+    if screen_name is not None:
+        params["screen_name"] = screen_name
 
     # We gather all tweet ids here
     tweets = set()
@@ -144,22 +154,32 @@ def user_timeline(user_id, auth, maxtweets=sys.maxsize):
     log.critical("Maximum retries exhausted ...")
     raise RetryExhausted(user_id, auth, maxtweets)
 
-def users_lookup(user_ids, auth):
+def users_lookup(user_ids=None, screen_names=None, auth=None):
     """
     Lookup profiles of as many users as possible.
 
     user_ids - A list of Twitter user_ids (max 100).
+    screen_names - A list of Twitter screen names (max 100).
+    
+    NOTE: Only one of user_ids or screen_names should be passed.
 
     Returns a iterable of user profiles. Not all profiles of the users may be
     returned. Twitter lookup api drops user profiles randomly.
     """
 
-    user_ids = map(str, user_ids)
-    user_ids = ",".join(user_ids)
+    assert bool(user_ids is not None) != bool(screen_names is not None)
+    assert auth is not None
 
     endpoint = "https://api.twitter.com/1.1/users/lookup.json"
     auth = OAuth1(signature_type="auth_header", **auth)
-    params = { "user_id": user_ids, "include_entities": 1 }
+    params = { "include_entities": 1 }
+    if user_ids is not None:
+        user_ids = map(str, user_ids)
+        user_ids = ",".join(user_ids)
+        params["user_ids"] = user_ids
+    if screen_names is not None:
+        screen_names = ",".join(screen_names)
+        params["screen_names"] = screen_names
 
     tries = 0
     while tries < RETRY_MAX:
@@ -195,20 +215,30 @@ def users_lookup(user_ids, auth):
     log.critical("Maximum retries exhausted ...")
     raise RetryExhausted(user_ids, auth)
 
-def user_show(user_id, auth):
+def user_show(user_id=None, screen_name=None, auth=None):
     """
     Get the profile a single Twitter user.
 
-    user_id - A user_id of a single Twitter user.
+    user_id - user_id of a single Twitter user.
+    screen_name - screen name of a single twitter user.
+    
+    NOTE: Only one of user_id or screen_name should be passed.
 
     Returns a two tuple. First is the status code returned by Twitter, second is
     the profile of the Twitter user. If status code is 403 or 403, the second
     atrribute will instead contain the reason of absence of the profile.
     """
 
+    assert bool(user_id is not None) != bool(screen_name is not None)
+    assert auth is not None
+
     endpoint = "https://api.twitter.com/1.1/users/show.json"
     auth = OAuth1(signature_type="auth_header", **auth)
-    params = { "user_id": user_id, "include_entities": 1 }
+    params = { "include_entities": 1 }
+    if user_id is not None:
+        params["user_id"] = user_id
+    if screen_name is not None:
+        params["screen_name"] = screen_name
 
     tries = 0
     while tries < RETRY_MAX:
