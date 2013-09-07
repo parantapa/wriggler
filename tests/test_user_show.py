@@ -5,6 +5,9 @@ Test the user_show api.
 import sys
 sys.path.append(".")
 
+import codecs
+sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
+
 import twitter
 from testauth import token
 

@@ -5,6 +5,9 @@ Test the users_lookup api.
 import sys
 sys.path.append(".")
 
+import codecs
+sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
+
 import twitter
 from testauth import token
 

@@ -5,6 +5,9 @@ Test the user_timeline api.
 import sys
 sys.path.append(".")
 
+import codecs
+sys.stdout = codecs.getwriter('utf-8')(sys.stdout)
+
 import twitter
 from testauth import token
 
@@ -17,8 +20,7 @@ def main():
     tweets = twitter.user_timeline(user_id, token)
 
     for tweet in tweets:
-        line = u"@{} - {}".format(tweet["user"]["screen_name"], tweet["text"])
-        print line.encode("utf-8")
+        print u"@{} - {}".format(tweet["user"]["screen_name"], tweet["text"])
 
 if __name__ == "__main__":
     main()
