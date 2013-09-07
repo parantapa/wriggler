@@ -309,25 +309,27 @@ def search_tweets(query, result_type, auth, maxtweets=sys.maxsize):
     params = { "q": query, "result_type": result_type, "count": 100,
                "include_entities": "true" }
 
-    # We gather all tweets here
-    tweets = {}
+    # We gather all tweet ids here
+    tweets = set()
     tcount = 0
 
     tries = 0
     while tries < RETRY_MAX:
         if tcount >= maxtweets:
-            return tweets.itervalues()
+            return
 
         r = req.get(endpoint, params=params, auth=auth, timeout=60.0)
 
         # Proper receive
         if r.status_code == 200:
             for tweet in r.json()["statuses"]:
-                tweets[tweet["id"]] = tweet
+                if tweet["id"] not in tweets:
+                    tweets.add(tweet["id"])
+                    yield tweet
 
             # If we have not added any more tweets; return
             if len(tweets) == tcount:
-                return tweets.itervalues()
+                return
             tcount = len(tweets)
 
             # Set the new max_id value
