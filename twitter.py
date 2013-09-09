@@ -249,8 +249,8 @@ def user_show(user_id=None, screen_name=None, auth=None):
             rest_rate_limit(r)
             return (200, r.json())
 
-        # User doesn't exist
-        if r.status_code in (403, 404):
+        # Invalid Token or, User doesn't exist
+        if r.status_code in (401, 403, 404):
             rest_rate_limit(r)
             return (r.status_code, r.json())
 
