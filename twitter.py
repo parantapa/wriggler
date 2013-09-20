@@ -57,6 +57,8 @@ def statuses_sample(auth):
 
     Constantly yields data from the streaming api. Will reconnect the stream
     if it gets disconnected.
+
+    NOTE: yields lines instead of json objects.
     """
 
     endpoint = "https://stream.twitter.com/1.1/statuses/sample.json"
@@ -69,7 +71,7 @@ def statuses_sample(auth):
         if r.status_code == 200:
             for line in r.iter_lines():
                 if line:
-                    yield json.loads(line)
+                    yield line
             continue
     
         # Dont expect anything else
