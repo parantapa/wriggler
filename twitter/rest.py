@@ -9,6 +9,10 @@ import pypb.req as req
 from logbook import Logger
 log = Logger(__name__)
 
+GIVE_UP_AFTER = 24 * 3600
+RETRY_AFTER   = 5
+RETRY_MAX     = GIVE_UP_AFTER // RETRY_AFTER
+
 def list_to_csv(args):
     """
     Convert a list to a string csv.

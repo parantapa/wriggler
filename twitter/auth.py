@@ -11,14 +11,11 @@ import times
 RESET_BUFFER      = 5
 RATE_LIMIT_BUFFER = 1
 
-GIVE_UP_AFTER = 24 * 3600
 RETRY_AFTER   = 5
-RETRY_MAX     = GIVE_UP_AFTER // RETRY_AFTER
 WINDOW_TIME   = 15 * 60
 
-if __debug__:
-    from logbook import Logger
-    log = Logger(__name__)
+from logbook import Logger
+log = Logger(__name__)
 
 class MultiAuth(object):
     """
@@ -62,16 +59,14 @@ class MultiAuth(object):
 
         # If we hit rate limit switch to the next key
         if self.remain[self.idx] <= RATE_LIMIT_BUFFER:
-            if __debug__:
-                log.debug("Key {} hit rate limit ...", self.idx)
+            log.debug("Key {} hit rate limit ...", self.idx)
             self.idx = (self.idx + 1) % len(self.keys)
 
             # The next key had also hit rate limit previously
             # Sleep off the rate limit window
             if (self.remain[self.idx] <= RATE_LIMIT_BUFFER
                     and self.reset[self.idx] <= now):
-                if __debug__:
-                    log.debug("Key {} still in rate limit ...", self.idx)
+                log.debug("Key {} still in rate limit ...", self.idx)
                 time.sleep(self.reset[self.idx] - now)
 
 def read_multi_auth(fname):
@@ -79,8 +74,7 @@ def read_multi_auth(fname):
     Read multiple keys from file.
     """
 
-    if __debug__:
-        log.debug("Reading keys from {} ...", fname)
+    log.debug("Reading keys from {} ...", fname)
 
     with open(fname) as fobj:
         keys = json.load(fobj)
