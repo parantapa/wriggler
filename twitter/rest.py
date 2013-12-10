@@ -33,11 +33,11 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
     Call a Twitter rest api endpoint.
     """
 
-    auth = OAuth1(signature_type="auth_header", **auth.get_token())
+    oauth = OAuth1(signature_type="auth_header", **auth.get_token())
 
     tries = 0
     while tries < RETRY_MAX:
-        r = req.get(endpoint, params=params, auth=auth, timeout=60.0)
+        r = req.get(endpoint, params=params, auth=oauth, timeout=60.0)
 
         # Proper receive
         if 200 <= r.status_code < 300 or r.status_code in accept_codes:
