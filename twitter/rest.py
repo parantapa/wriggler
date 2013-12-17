@@ -56,6 +56,19 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
             tries += 1
             continue
 
+        # Client side error; Can't handle here
+        if 400 <= r.status_code < 500:
+            log.error(u"Try {}: Client side error - {} {}",
+                      tries, r.status_code, r.text)
+            raise Error("Client side error", r.status_code, r.text)
+
+        # Server side error; Retry after delay
+        if 500 <= r.status_code < 600:
+            log.info(u"Try {}: Server side error {} {}",
+                     tries, r.status_code, r.text)
+            auth.check_limit(r.headers)
+            tries += 1
+
         # Dont expect anything else
         log.warn(u"Try {}: Unexepectd response - {} {}",
                  tries, r.status_code, r.text)

@@ -50,9 +50,10 @@ class MultiAuth(object):
             curtime = times.to_unix(times.to_universal(headers["date"]))
             self.remain[self.idx] = int(headers["X-Rate-Limit-Remaining"])
             self.reset[self.idx]  = int(headers["X-Rate-Limit-Reset"]) - curtime
-        except KeyError:
-            self.remain[self.idx] = 0
-            self.reset[self.idx]  = RETRY_AFTER
+        except KeyError as e:
+            log.warn(u"Header not found! - {} {}", type(e), e)
+            time.sleep(RETRY_AFTER)
+            return
 
         # Reset time in our system time
         self.reset[self.idx] += now + RESET_BUFFER
