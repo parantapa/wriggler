@@ -32,6 +32,42 @@ class RetryExhausted(Error):
     Maximum retry count exhausted.
     """
 
+def id_iterator(func, maxitems, auth, **params):
+    """
+    Iterate over the calls of the function using max_id
+    """
+
+    count = 0
+    while count < maxitems:
+        data, _ = func(auth, **params)
+        if len(data) == 0:
+            return
+
+        max_id = max(x["id"] for x in data) - 1
+        params["max_id"] = max_id
+        count += len(count)
+
+        for item in data:
+            yield item
+
+def cursor_iterator(func, maxitems, auth, **params):
+    """
+    Iteratie over the calls of the function using cursor.
+    """
+
+    count = 0
+    next_cursor = -1
+
+    while count < maxitems and next_cursor != 0:
+        params["next_cursor"] = next_cursor
+        data, _ = func(auth, **params)
+        if len(data["ids"]) == 0:
+            return
+
+        next_cursor = data["next_cursor"]
+        for x in data["ids"]:
+            yield x
+
 def twitter_rest_call(endpoint, auth, accept_codes, params):
     """
     Call a Twitter rest api endpoint.
