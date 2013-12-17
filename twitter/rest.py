@@ -85,7 +85,7 @@ def users_show(auth, **params):
     """
 
     endpoint = "https://api.twitter.com/1.1/users/show.json"
-    accept_codes = (401, 403, 404)
+    accept_codes = (403, 404)
 
     params.setdefault("include_entities", 1)
 
