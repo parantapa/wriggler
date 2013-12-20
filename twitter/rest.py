@@ -41,12 +41,13 @@ def id_iterator(func, maxitems, auth, **params):
         if len(data) == 0:
             return
 
-        max_id = max(x["id"] for x in data) - 1
+        max_id = min(x["id"] for x in data) - 1
         params["max_id"] = max_id
-        count += len(count)
 
         for item in data:
-            yield item
+            if count < maxitems:
+                yield item
+            count += 1
 
 def cursor_iterator(func, maxitems, auth, **params):
     """
@@ -64,7 +65,9 @@ def cursor_iterator(func, maxitems, auth, **params):
 
         next_cursor = data["next_cursor"]
         for x in data["ids"]:
-            yield x
+            if count < maxitems:
+                yield x
+            count += 1
 
 def twitter_rest_call(endpoint, auth, accept_codes, params):
     """
