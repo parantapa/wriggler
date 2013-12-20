@@ -87,5 +87,32 @@ def test_statuses_user_timeline_iter(samp_auth):
                                     **params):
         assert meta["code"] == 200
         results.extend(tweets)
-    assert all(t["user"]["id"] == U[0][0] for t in tweets)
-    assert all(t["user"]["screen_name"] == U[0][1] for t in tweets)
+    assert all(t["user"]["id"] == U[0][0] for t in results)
+    assert all(t["user"]["screen_name"] == U[0][1] for t in results)
+
+def test_search_tweets(samp_auth):
+    """
+    Test the tweets_search method.
+    """
+
+    query = "#twitter"
+
+    params = {"q": query, "result_type": "recent"}
+    tweets, meta = rest.search_tweets(samp_auth, **params)
+    assert meta["code"] == 200
+    assert all(query in t["text"].lower() for t in tweets["statuses"])
+
+def test_search_tweets_iter(samp_auth):
+    """
+    Test the tweets_search method w/ id_iter.
+    """
+
+    query = "#twitter"
+
+    params = {"q": query, "result_type": "recent", "count": 10}
+    results = []
+    for data, meta in rest.id_iter(rest.search_tweets, 20, samp_auth, **params):
+        assert meta["code"] == 200
+        results.extend(data["statuses"])
+    assert all(query in t["text"].lower() for t in results)
+
