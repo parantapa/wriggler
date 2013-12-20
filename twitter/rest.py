@@ -30,44 +30,33 @@ class RetryExhausted(Error):
     Maximum retry count exhausted.
     """
 
-def id_iterator(func, maxitems, auth, **params):
+def id_iter(func, maxitems, auth, **params):
     """
     Iterate over the calls of the function using max_id
     """
 
     count = 0
     while count < maxitems:
-        data, _ = func(auth, **params)
-        if len(data) == 0:
+        data, meta = func(auth, **params)
+        yield data, meta
+
+        if meta["max_id"] is None or meta["finished"]:
             return
+        count += meta["count"]
 
-        max_id = min(x["id"] for x in data) - 1
-        params["max_id"] = max_id
-
-        for item in data:
-            if count < maxitems:
-                yield item
-            count += 1
-
-def cursor_iterator(func, maxitems, auth, **params):
+def cursor_iter(func, maxitems, auth, **params):
     """
     Iteratie over the calls of the function using cursor.
     """
 
     count = 0
-    next_cursor = -1
+    while count < maxitems:
+        data, meta = func(auth, **params)
+        yield data, meta
 
-    while count < maxitems and next_cursor != 0:
-        params["next_cursor"] = next_cursor
-        data, _ = func(auth, **params)
-        if len(data["ids"]) == 0:
+        if meta["next_cursor"] == 0 or meta["finished"]:
             return
-
-        next_cursor = data["next_cursor"]
-        for x in data["ids"]:
-            if count < maxitems:
-                yield x
-            count += 1
+        count += meta["count"]
 
 def twitter_rest_call(endpoint, auth, accept_codes, params):
     """
@@ -126,7 +115,8 @@ def users_show(auth, **params):
 
     params.setdefault("include_entities", 1)
 
-    return twitter_rest_call(endpoint, auth, accept_codes, params)
+    data, code = twitter_rest_call(endpoint, auth, accept_codes, params)
+    return data, {"code": code}
 
 def users_lookup(auth, **params):
     """
@@ -142,7 +132,8 @@ def users_lookup(auth, **params):
     if "screen_name" in params:
         params["screen_name"] = list_to_csv(params["screen_name"])
 
-    return twitter_rest_call(endpoint, auth, accept_codes, params)
+    data, code = twitter_rest_call(endpoint, auth, accept_codes, params)
+    return data, {"code": code}
 
 def statuses_user_timeline(auth, **params):
     """
@@ -155,31 +146,22 @@ def statuses_user_timeline(auth, **params):
     params.setdefault("include_rts", 1)
     params.setdefault("count", 200)
 
-    return twitter_rest_call(endpoint, auth, accept_codes, params)
+    data, code = twitter_rest_call(endpoint, auth, accept_codes, params)
+    try:
+        max_id = min(tweet["id"] for tweet in data) - 1
+        since_id = max(tweet["id"] for tweet in data)
+    except ValueError:
+        max_id, since_id = None, None
 
-def friends_ids(auth, **params):
-    """
-    Get the friend ids of a given user.
-    """
+    meta = {
+        "code": code,
+        "max_id": max_id,
+        "since_id": since_id,
+        "count": len(data),
+        "finished": len(data) < params["count"]
+    }
 
-    endpoint = "https://api.twitter.com/1.1/friends/ids.json"
-    accept_codes = (403, 404)
-
-    params.setdefault("count", 5000)
-
-    return twitter_rest_call(endpoint, auth, accept_codes, params)
-
-def followers_ids(auth, **params):
-    """
-    Get the friend ids of a given user.
-    """
-
-    endpoint = "https://api.twitter.com/1.1/followers/ids.json"
-    accept_codes = (403, 404)
-
-    params.setdefault("count", 5000)
-
-    return twitter_rest_call(endpoint, auth, accept_codes, params)
+    return data, meta
 
 def search_tweets(auth, **params):
     """
@@ -192,5 +174,59 @@ def search_tweets(auth, **params):
     params.setdefault("count", 100)
     params.setdefault("include_entities", "true")
 
-    return twitter_rest_call(endpoint, auth, accept_codes, params)
+    data, code = twitter_rest_call(endpoint, auth, accept_codes, params)
+    try:
+        max_id = min(tweet["id"] for tweet in data["statuses"]) - 1
+        since_id = min(tweet["id"] for tweet in data["statuses"])
+    except ValueError:
+        max_id, since_id = None, None
 
+    meta = {
+        "code": code,
+        "max_id": max_id,
+        "since_id": since_id,
+        "count": len(data["statuses"]),
+        "finished": len(data["statuses"]) < params["count"]
+    }
+
+    return data, meta
+
+def friends_ids(auth, **params):
+    """
+    Get the friend ids of a given user.
+    """
+
+    endpoint = "https://api.twitter.com/1.1/friends/ids.json"
+    accept_codes = (403, 404)
+
+    params.setdefault("count", 5000)
+
+    data, code = twitter_rest_call(endpoint, auth, accept_codes, params)
+    meta = {
+        "code": code,
+        "next_cursor": data["next_cursor"],
+        "count": len(data["ids"]),
+        "finished": len(data["ids"]) < params["count"]
+    }
+
+    return data, meta
+
+def followers_ids(auth, **params):
+    """
+    Get the friend ids of a given user.
+    """
+
+    endpoint = "https://api.twitter.com/1.1/followers/ids.json"
+    accept_codes = (403, 404)
+
+    params.setdefault("count", 5000)
+
+    data, code = twitter_rest_call(endpoint, auth, accept_codes, params)
+    meta = {
+        "code": code,
+        "next_cursor": data["next_cursor"],
+        "count": len(data["ids"]),
+        "finished": len(data["ids"]) < params["count"]
+    }
+
+    return data, meta
