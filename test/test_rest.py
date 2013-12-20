@@ -64,15 +64,28 @@ def test_statuses_user_timeline(samp_auth):
     Test the statuses/user_timeline method.
     """
 
-    params = {"user_id": U[0][0]}
+    params = {"user_id": U[0][0], "count": 10}
     tweets, meta = rest.statuses_user_timeline(samp_auth, **params)
     assert meta["code"] == 200
     assert all(t["user"]["id"] == U[0][0] for t in tweets)
     assert all(t["user"]["screen_name"] == U[0][1] for t in tweets)
 
-    params = {"screen_name": U[0][1]}
+    params = {"screen_name": U[0][1], "count": 10}
     tweets, meta = rest.statuses_user_timeline(samp_auth, **params)
     assert meta["code"] == 200
     assert all(t["user"]["id"] == U[0][0] for t in tweets)
     assert all(t["user"]["screen_name"] == U[0][1] for t in tweets)
 
+def test_statuses_user_timeline_iter(samp_auth):
+    """
+    Test the statuses/user_timeline method using id_iter.
+    """
+
+    params = {"user_id": U[0][0], "count": 10}
+    results = []
+    for tweets, meta in rest.id_iter(rest.statuses_user_timeline, 20, samp_auth,
+                                    **params):
+        assert meta["code"] == 200
+        results.extend(tweets)
+    assert all(t["user"]["id"] == U[0][0] for t in tweets)
+    assert all(t["user"]["screen_name"] == U[0][1] for t in tweets)
