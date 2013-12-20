@@ -6,12 +6,10 @@ from requests_oauthlib import OAuth1
 
 import pypb.req as req
 
+from . import const
+
 from logbook import Logger
 log = Logger(__name__)
-
-GIVE_UP_AFTER = 24 * 3600
-RETRY_AFTER   = 5
-RETRY_MAX     = GIVE_UP_AFTER // RETRY_AFTER
 
 def list_to_csv(args):
     """
@@ -76,7 +74,7 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
     oauth = OAuth1(signature_type="auth_header", **auth.get_token())
 
     tries = 0
-    while tries < RETRY_MAX:
+    while tries < const.RETRY_MAX:
         r = req.get(endpoint, params=params, auth=oauth, timeout=60.0)
 
         # Proper receive
