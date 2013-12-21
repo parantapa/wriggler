@@ -8,10 +8,8 @@ import json
 
 import times
 
-from . import const
-
-from logbook import Logger
-log = Logger(__name__)
+from twitter import log
+import twitter.const as const
 
 class MultiAuth(object):
     """

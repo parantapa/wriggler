@@ -6,10 +6,8 @@ from requests_oauthlib import OAuth1
 
 import pypb.req as req
 
-from . import const
-
-from logbook import Logger
-log = Logger(__name__)
+from twitter import log
+import twitter.const as const
 
 def list_to_csv(args):
     """
