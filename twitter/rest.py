@@ -43,6 +43,7 @@ def id_iter(func, maxitems, auth, **params):
         if meta["max_id"] is None or meta["finished"]:
             return
         count += meta["count"]
+        params["max_id"] = meta["max_id"]
 
 def cursor_iter(func, maxitems, auth, **params):
     """
@@ -57,6 +58,7 @@ def cursor_iter(func, maxitems, auth, **params):
         if meta["next_cursor"] == 0 or meta["finished"]:
             return
         count += meta["count"]
+        params["cursor"] = meta["next_cursor"]
 
 def twitter_rest_call(endpoint, auth, accept_codes, params):
     """
