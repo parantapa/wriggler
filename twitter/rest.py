@@ -157,15 +157,16 @@ def statuses_user_timeline(auth, **params):
     try:
         max_id = min(tweet["id"] for tweet in data) - 1
         since_id = max(tweet["id"] for tweet in data)
-    except ValueError:
-        max_id, since_id = None, None
+        count = len(data)
+    except ValueError, KeyError:
+        max_id, since_id, count = None, None, 0
 
     meta = {
         "code": code,
         "max_id": max_id,
         "since_id": since_id,
-        "count": len(data),
-        "finished": len(data) < params["count"]
+        "count": count,
+        "finished": count < params["count"]
     }
 
     return data, meta
@@ -185,15 +186,16 @@ def search_tweets(auth, **params):
     try:
         max_id = min(tweet["id"] for tweet in data["statuses"]) - 1
         since_id = min(tweet["id"] for tweet in data["statuses"])
-    except ValueError:
-        max_id, since_id = None, None
+        count = len(data["statuses"])
+    except ValueError, KeyError:
+        max_id, since_id, count = None, None, 0
 
     meta = {
         "code": code,
         "max_id": max_id,
         "since_id": since_id,
-        "count": len(data["statuses"]),
-        "finished": len(data["statuses"]) < params["count"]
+        "count": count,
+        "finished": count < params["count"]
     }
 
     return data, meta
@@ -209,11 +211,17 @@ def friends_ids(auth, **params):
     params.setdefault("count", 5000)
 
     data, code = twitter_rest_call(endpoint, auth, accept_codes, params)
+    try:
+        next_cursor = data["next_cursor"]
+        count = len(data["ids"])
+    except KeyError:
+        next_cursor, count = 0, 0
+
     meta = {
         "code": code,
-        "next_cursor": data["next_cursor"],
-        "count": len(data["ids"]),
-        "finished": len(data["ids"]) < params["count"]
+        "next_cursor": next_cursor,
+        "count": count,
+        "finished": count < params["count"]
     }
 
     return data, meta
@@ -229,11 +237,17 @@ def followers_ids(auth, **params):
     params.setdefault("count", 5000)
 
     data, code = twitter_rest_call(endpoint, auth, accept_codes, params)
+    try:
+        next_cursor = data["next_cursor"]
+        count = len(data["ids"])
+    except KeyError:
+        next_cursor, count = 0, 0
+
     meta = {
         "code": code,
-        "next_cursor": data["next_cursor"],
-        "count": len(data["ids"]),
-        "finished": len(data["ids"]) < params["count"]
+        "next_cursor": next_cursor,
+        "count": count,
+        "finished": count < params["count"]
     }
 
     return data, meta
