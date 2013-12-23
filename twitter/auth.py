@@ -60,7 +60,7 @@ class MultiAuth(object):
             # The next key had also hit rate limit previously
             # Sleep off the rate limit window
             if (self.remain[self.idx] <= const.RATE_LIMIT_BUFFER
-                    and self.reset[self.idx] <= now):
+                    and self.reset[self.idx] > now):
                 log.debug("Key {} still in rate limit ...", self.idx)
                 time.sleep(self.reset[self.idx] - now)
 
