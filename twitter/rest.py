@@ -63,7 +63,8 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
     Call a Twitter rest api endpoint.
     """
 
-    oauth = OAuth1(signature_type="auth_header", **auth.get_token())
+    token = auth.get_token()
+    oauth = OAuth1(signature_type="auth_header", **token)
 
     tries = 0
     while tries < const.RETRY_MAX:
@@ -81,6 +82,12 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
             auth.check_limit(r.headers)
             tries += 1
             continue
+
+        if r.status_code == 401:
+            log.error(u"Try {}: Bad token - {}, {}",
+                     tries, r.status_code, r.text)
+            log.error(token)
+            raise Error("Bad token error", r.status_code, r.text)
 
         # Client side error; Can't handle here
         if 400 <= r.status_code < 500:
