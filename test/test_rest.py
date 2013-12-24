@@ -97,7 +97,7 @@ def test_search_tweets(samp_auth):
     Test the tweets_search method.
     """
 
-    query = "#twitter"
+    query = "news"
 
     params = {"q": query, "result_type": "recent"}
     tweets, meta = rest.search_tweets(samp_auth, **params)
@@ -108,7 +108,7 @@ def test_search_tweets_iter(samp_auth):
     Test the tweets_search method w/ id_iter.
     """
 
-    query = "#twitter"
+    query = "news"
 
     params = {"q": query, "result_type": "recent", "count": 10}
     results = []
