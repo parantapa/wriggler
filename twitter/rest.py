@@ -8,6 +8,7 @@ import pypb.req as req
 
 from twitter import log
 import twitter.const as const
+from twitter.error_codes import HTTP_STATUS_CODES, ERROR_CODES
 
 def list_to_csv(args):
     """
@@ -23,10 +24,47 @@ class Error(Exception):
     Unrecoverable Error.
     """
 
-class RetryExhausted(Error):
+class APIError(Error):
     """
-    Maximum retry count exhausted.
+    The Twitter API returned an error.
     """
+
+    def __init__(self, response):
+        super(APIError, self).__init__(response)
+
+        self.response = response
+
+        self.http_status_code = response.status_code
+        try:
+            self.body = response.json()
+            self.parsed_body = True
+        except ValueError:
+            self.body = response.text
+            self.parsed_body = False
+
+        if self.parsed_body:
+            try:
+                self.error_code = self.body["errors"][0]["code"]
+            except (KeyError, IndexError):
+                self.error_code = None
+        else:
+            self.error_code = None
+
+    def __repr__(self):
+        fmt = "APIError(http_status_code={0},error_code={1})"
+        return fmt.format(self.http_status_code, self.error_code)
+
+    def __str__(self):
+        htext, hdesc = HTTP_STATUS_CODES.get(self.http_status_code,
+                                             ("Unknown", "Unknown"))
+        etext, edesc = ERROR_CODES.get(self.error_code,
+                                       ("Unknown", "Unknown"))
+        body = str(self.body)
+
+        hdr = "APIError\nhttp_status_code: {0} - {1}\n{2}\nerror_code: {3} - {4}\n{5}"
+        hdr = hdr.format(self.http_status_code, htext, hdesc,
+                         self.error_code, etext, edesc)
+        return hdr + "\n--------\n" + body
 
 def id_iter(func, maxitems, auth, **params):
     """
@@ -83,18 +121,6 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
             tries += 1
             continue
 
-        if r.status_code == 401:
-            log.error(u"Try {}: Bad token - {}, {}",
-                     tries, r.status_code, r.text)
-            log.error(token)
-            raise Error("Bad token error", r.status_code, r.text)
-
-        # Client side error; Can't handle here
-        if 400 <= r.status_code < 500:
-            log.error(u"Try {}: Client side error - {} {}",
-                      tries, r.status_code, r.text)
-            raise Error("Client side error", r.status_code, r.text)
-
         # Server side error; Retry after delay
         if 500 <= r.status_code < 600:
             log.info(u"Try {}: Server side error {} {}",
@@ -102,15 +128,12 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
             auth.check_limit(r.headers)
             tries += 1
 
-        # Dont expect anything else
-        log.warn(u"Try {}: Unexepectd response - {} {}",
-                 tries, r.status_code, r.text)
-        auth.check_limit(r.headers)
-        tries += 1
-        continue
+        # Some other error; Break out of loop
+        break
 
-    log.critical("Maximum retries exhausted ...")
-    raise RetryExhausted(endpoint, params)
+    log.error(u"Try {}: Unexepectd response - {} {}",
+              tries, r.status_code, r.text)
+    raise APIError(r)
 
 def users_show(auth, **params):
     """
@@ -158,7 +181,7 @@ def statuses_user_timeline(auth, **params):
         max_id = min(tweet["id"] for tweet in data) - 1
         since_id = max(tweet["id"] for tweet in data)
         count = len(data)
-    except ValueError, KeyError:
+    except (ValueError, KeyError):
         max_id, since_id, count = None, None, 0
 
     meta = {
@@ -187,7 +210,7 @@ def search_tweets(auth, **params):
         max_id = min(tweet["id"] for tweet in data["statuses"]) - 1
         since_id = min(tweet["id"] for tweet in data["statuses"])
         count = len(data["statuses"])
-    except ValueError, KeyError:
+    except (ValueError, KeyError):
         max_id, since_id, count = None, None, 0
 
     meta = {

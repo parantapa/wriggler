@@ -14,9 +14,6 @@ RETRY_AFTER = 5
 # The rate limit time window as set by Twitter = 15 minutes
 WINDOW_TIME = 15 * 60
 
-# If requests keep failing for 4 hours give up
-GIVE_UP_AFTER = 4 * 60 * 60
-
 # Maximum number of retries
-RETRY_MAX = GIVE_UP_AFTER // RETRY_AFTER
+RETRY_MAX = 5
 

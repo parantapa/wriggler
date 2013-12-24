@@ -64,6 +64,14 @@ class MultiAuth(object):
                 log.debug("Key {} still in rate limit ...", self.idx)
                 time.sleep(self.reset[self.idx] - now)
 
+def chunks(l, n):
+    """
+    Yield successive n-sized chunks from l.
+    """
+
+    for i in xrange(0, len(l), n):
+        yield l[i:i+n]
+
 def read_multi_auth(fname):
     """
     Read multiple keys from file.
@@ -74,4 +82,18 @@ def read_multi_auth(fname):
         keys = json.load(fobj)
 
     return MultiAuth(keys)
+
+def read_multi_auths(fname, size=sys.maxsize):
+    """
+    Read multiple keys from file.
+    """
+
+    log.debug("Reading keys from {} ...", fname)
+    with open(fname) as fobj:
+        keys = json.load(fobj)
+
+    ks = list(chunks(keys, size))
+    auths = [MultiAuth(k) for k in ks]
+
+    return auths
 
