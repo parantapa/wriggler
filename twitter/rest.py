@@ -4,10 +4,9 @@ Robust Twitter crawler primitives.
 
 from requests_oauthlib import OAuth1
 
-import pypb.req as req
-
-from twitter import log
+from twitter import log, Error
 import twitter.const as const
+import twitter.req as req
 from twitter.error_codes import HTTP_STATUS_CODES, ERROR_CODES
 
 def list_to_csv(args):
@@ -18,11 +17,6 @@ def list_to_csv(args):
     args = map(str, args)
     args = ",".join(args)
     return args
-
-class Error(Exception):
-    """
-    Unrecoverable Error.
-    """
 
 class APIError(Error):
     """
@@ -59,7 +53,7 @@ class APIError(Error):
                                              ("Unknown", "Unknown"))
         etext, edesc = ERROR_CODES.get(self.error_code,
                                        ("Unknown", "Unknown"))
-        body = str(self.body)
+        body = unicode(self.body).encode("utf-8")
 
         hdr = "APIError\nhttp_status_code: {0} - {1}\n{2}\nerror_code: {3} - {4}\n{5}"
         hdr = hdr.format(self.http_status_code, htext, hdesc,
@@ -115,7 +109,7 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
 
         # Check if rate limited
         if r.status_code == 429:
-            log.info(u"Try {}: Being throttled - {} {}",
+            log.info(u"Try L1 {}: Being throttled - {} {}",
                      tries, r.status_code, r.text)
             auth.check_limit(r.headers)
             tries += 1
@@ -123,7 +117,7 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
 
         # Server side error; Retry after delay
         if 500 <= r.status_code < 600:
-            log.info(u"Try {}: Server side error {} {}",
+            log.info(u"Try L1 {}: Server side error {} {}",
                      tries, r.status_code, r.text)
             auth.check_limit(r.headers)
             tries += 1
@@ -131,7 +125,7 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
         # Some other error; Break out of loop
         break
 
-    log.error(u"Try {}: Unexepectd response - {} {}",
+    log.error(u"Try L1 {}: Unexepectd response - {} {}",
               tries, r.status_code, r.text)
     raise APIError(r)
 
