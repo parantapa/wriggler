@@ -11,14 +11,14 @@ RATE_LIMIT_BUFFER = 1
 # The rate limit time window as set by Twitter = 15 minutes
 WINDOW_TIME = 15 * 60
 
-# Retry on connection fail
-CONNECT_RETRY_AFTER = 15
+# Retry on connection fail (seconds)
+CONNECT_RETRY_AFTER = 10
 
 # Maximum number of connection retries
 CONNECT_RETRY_MAX = 10
 
-# In case of unknown error retry after this many seconds
-RETRY_AFTER = 5
+# In case of unknown error in rest api, retry after this many seconds
+REST_RETRY_AFTER = 5
 
 # Maximum number of retries
 RETRY_MAX = 10

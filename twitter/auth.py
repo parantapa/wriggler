@@ -46,7 +46,7 @@ class MultiAuth(object):
             self.reset[self.idx]  = int(headers["X-Rate-Limit-Reset"]) - curtime
         except KeyError as e:
             log.warn(u"Header not found! - {} {}", type(e), e)
-            time.sleep(const.RETRY_AFTER)
+            time.sleep(const.REST_RETRY_AFTER)
             return
 
         # Reset time in our system time
