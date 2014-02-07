@@ -20,7 +20,7 @@ def samp_key():
 
     kfname = "gsb-test-key.txt"
     with open(kfname, "r") as fobj:
-        key = fobj.read().split()
+        key = fobj.read().strip()
     return key
 
 def test_lookup(samp_key):
