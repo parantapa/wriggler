@@ -8,8 +8,8 @@ import json
 
 import times
 
-from twitter import log
-import twitter.const as const
+from wriggler import log
+import wriggler.const as const
 
 class MultiAuth(object):
     """
@@ -24,7 +24,7 @@ class MultiAuth(object):
         self.idx    = 0
         self.keys   = keys
         self.remain = [sys.maxsize] * len(keys)
-        self.reset  = [now + const.WINDOW_TIME] * len(keys)
+        self.reset  = [now + const.TWITTER_DEFAULT_WINDOW_TIME] * len(keys)
 
     def get_token(self):
         """
@@ -46,20 +46,20 @@ class MultiAuth(object):
             self.reset[self.idx]  = int(headers["X-Rate-Limit-Reset"]) - curtime
         except KeyError as e:
             log.warn(u"Header not found! - {} {}", type(e), e)
-            time.sleep(const.REST_RETRY_AFTER)
+            time.sleep(const.API_RETRY_MAX)
             return
 
         # Reset time in our system time
-        self.reset[self.idx] += now + const.RATE_LIMIT_RESET_BUFFER
+        self.reset[self.idx] += now + const.TWITTER_RATE_LIMIT_RESET_BUFFER
 
         # If we hit rate limit switch to the next key
-        if self.remain[self.idx] <= const.RATE_LIMIT_BUFFER:
+        if self.remain[self.idx] <= const.TWITTER_RATE_LIMIT_BUFFER:
             log.debug("Key {} hit rate limit ...", self.idx)
             self.idx = (self.idx + 1) % len(self.keys)
 
             # The next key had also hit rate limit previously
             # Sleep off the rate limit window
-            if (self.remain[self.idx] <= const.RATE_LIMIT_BUFFER
+            if (self.remain[self.idx] <= const.TWITTER_RATE_LIMIT_BUFFER
                     and self.reset[self.idx] > now):
                 log.debug("Key {} still in rate limit ...", self.idx)
                 time.sleep(self.reset[self.idx] - now)

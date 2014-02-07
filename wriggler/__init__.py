@@ -1,5 +1,5 @@
 """
-Twitter crawler module.
+Wriggler crawler module.
 """
 
 from logbook import Logger

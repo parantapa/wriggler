@@ -4,8 +4,8 @@ Test the search_tweets api.
 
 import pytest
 
-import twitter.auth as auth
-import twitter.rest as rest
+import wriggler.twitter.auth as auth
+import wriggler.twitter.rest as rest
 
 U = [
     (813286, "BarackObama"),

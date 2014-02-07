@@ -9,8 +9,8 @@ is quite simple. Wait for fixed number of seconds on error and then retry.
 import requests
 from time import sleep
 
-from twitter import log, Error
-import twitter.const as const
+from wriggler import log, Error
+import wriggler.const as const
 
 class ConnectFailError(Error):
     """

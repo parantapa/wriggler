@@ -4,10 +4,10 @@ Robust Twitter crawler primitives.
 
 from requests_oauthlib import OAuth1
 
-from twitter import log, Error
-import twitter.const as const
-import twitter.req as req
-from twitter.error_codes import HTTP_STATUS_CODES, ERROR_CODES
+from wriggler import log, Error
+import wriggler.const as const
+import wriggler.req as req
+import wriggler.twitter.error_codes as ec
 
 def list_to_csv(args):
     """
@@ -18,13 +18,13 @@ def list_to_csv(args):
     args = ",".join(args)
     return args
 
-class APIError(Error):
+class TwitterRestAPIError(Error):
     """
     The Twitter API returned an error.
     """
 
     def __init__(self, response):
-        super(APIError, self).__init__(response)
+        super(TwitterRestAPIError, self).__init__(response)
 
         self.response = response
 
@@ -45,17 +45,17 @@ class APIError(Error):
             self.error_code = None
 
     def __repr__(self):
-        fmt = "APIError(http_status_code={0},error_code={1})"
+        fmt = "TwitterRestAPIError(http_status_code={0},error_code={1})"
         return fmt.format(self.http_status_code, self.error_code)
 
     def __str__(self):
-        htext, hdesc = HTTP_STATUS_CODES.get(self.http_status_code,
-                                             ("Unknown", "Unknown"))
-        etext, edesc = ERROR_CODES.get(self.error_code,
-                                       ("Unknown", "Unknown"))
+        htext, hdesc = ec.HTTP_STATUS_CODES.get(self.http_status_code,
+                                                ("Unknown", "Unknown"))
+        etext, edesc = ec.ERROR_CODES.get(self.error_code,
+                                          ("Unknown", "Unknown"))
         body = unicode(self.body).encode("utf-8")
 
-        hdr = "APIError\nhttp_status_code: {0} - {1}\n{2}\nerror_code: {3} - {4}\n{5}"
+        hdr = "TwitterRestAPIError\nhttp_status_code: {0} - {1}\n{2}\nerror_code: {3} - {4}\n{5}"
         hdr = hdr.format(self.http_status_code, htext, hdesc,
                          self.error_code, etext, edesc)
         return hdr + "\n--------\n" + body
@@ -99,7 +99,7 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
     oauth = OAuth1(signature_type="auth_header", **token)
 
     tries = 0
-    while tries < const.RETRY_MAX:
+    while tries < const.API_RETRY_MAX:
         r = req.get(endpoint, params=params, auth=oauth, timeout=60.0)
 
         # Proper receive
@@ -127,7 +127,7 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
 
     log.error(u"Try L1 {}: Unexepectd response - {} {}",
               tries, r.status_code, r.text)
-    raise APIError(r)
+    raise TwitterRestAPIError(r)
 
 def users_show(auth, **params):
     """
