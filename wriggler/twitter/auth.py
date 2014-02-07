@@ -85,7 +85,7 @@ def read_multi_auth(fname):
 
 def read_multi_auths(fname, size=sys.maxsize):
     """
-    Read multiple keys from file.
+    Read multiple keys from file split into size blocks.
     """
 
     log.debug("Reading keys from {} ...", fname)
