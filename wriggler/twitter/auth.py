@@ -6,7 +6,8 @@ import sys
 import time
 import json
 
-import times
+import arrow
+from dateutil.parser import parse
 
 from wriggler import log
 import wriggler.const as const
@@ -19,7 +20,7 @@ class MultiAuth(object):
     def __init__(self, keys):
         super(MultiAuth, self).__init__()
 
-        now = times.to_unix(times.now())
+        now = arrow.now().timestamp
 
         self.idx    = 0
         self.keys   = keys
@@ -38,10 +39,10 @@ class MultiAuth(object):
         Check if rate limit is hit for the current key.
         """
 
-        now = times.to_unix(times.now())
+        now = arrow.now().timestamp
 
         try:
-            curtime = times.to_unix(times.to_universal(headers["date"]))
+            curtime = arrow.get(parse(headers["date"])).timestamp
             self.remain[self.idx] = int(headers["X-Rate-Limit-Remaining"])
             self.reset[self.idx]  = int(headers["X-Rate-Limit-Reset"]) - curtime
         except KeyError as e:
@@ -72,7 +73,7 @@ def chunks(l, n):
     for i in xrange(0, len(l), n):
         yield l[i:i+n]
 
-def read_multi_auth(fname):
+def read_keys(fname):
     """
     Read multiple keys from file.
     """
@@ -83,7 +84,7 @@ def read_multi_auth(fname):
 
     return MultiAuth(keys)
 
-def read_multi_auths(fname, size=sys.maxsize):
+def read_keys_split(fname, size=sys.maxsize):
     """
     Read multiple keys from file split into size blocks.
     """

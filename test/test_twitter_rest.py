@@ -19,7 +19,7 @@ def samp_auth():
     """
 
     kfname = "twitter-test-keys.json"
-    ath = auth.read_multi_auth(kfname)
+    ath = auth.read_keys(kfname)
     return ath
 
 def test_users_show(samp_auth):
