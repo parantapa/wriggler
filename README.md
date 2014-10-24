@@ -1,4 +1,4 @@
-wriggler
+Wriggler
 ========
 
 Web Crawlers
