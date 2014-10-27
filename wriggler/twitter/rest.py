@@ -66,12 +66,14 @@ def id_iter(func, maxitems, auth, **params):
     """
 
     count = 0
+    max_id = float("inf")
     while count < maxitems:
         data, meta = func(auth, **params)
         yield data, meta
 
-        if meta["max_id"] is None or meta["finished"]:
+        if meta["max_id"] is None or meta["max_id"] >= max_id:
             return
+        max_id = meta["max_id"]
         count += meta["count"]
         params["max_id"] = meta["max_id"]
 
@@ -85,7 +87,7 @@ def cursor_iter(func, maxitems, auth, **params):
         data, meta = func(auth, **params)
         yield data, meta
 
-        if meta["next_cursor"] == 0 or meta["finished"]:
+        if meta["next_cursor"] == 0:
             return
         count += meta["count"]
         params["cursor"] = meta["next_cursor"]
@@ -94,6 +96,9 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
     """
     Call a Twitter rest api endpoint.
     """
+
+    ## DEBUG
+    # print(endpoint)
 
     token = auth.get_token()
     oauth = OAuth1(signature_type="auth_header", **token)
@@ -105,6 +110,12 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
         # Proper receive
         if 200 <= r.status_code < 300 or r.status_code in accept_codes:
             auth.check_limit(r.headers)
+
+            ## DEBUG
+            # import json
+            # print(json.dumps(r.json(), sort_keys=True, indent=4, separators=(',', ': ')))
+            # print(r.status_code)
+
             return (r.json(), r.status_code)
 
         # Check if rate limited
@@ -183,7 +194,6 @@ def statuses_user_timeline(auth, **params):
         "max_id": max_id,
         "since_id": since_id,
         "count": count,
-        "finished": count < params["count"]
     }
 
     return data, meta
@@ -212,7 +222,6 @@ def search_tweets(auth, **params):
         "max_id": max_id,
         "since_id": since_id,
         "count": count,
-        "finished": count < params["count"]
     }
 
     return data, meta
@@ -238,7 +247,6 @@ def friends_ids(auth, **params):
         "code": code,
         "next_cursor": next_cursor,
         "count": count,
-        "finished": count < params["count"]
     }
 
     return data, meta
@@ -264,7 +272,6 @@ def followers_ids(auth, **params):
         "code": code,
         "next_cursor": next_cursor,
         "count": count,
-        "finished": count < params["count"]
     }
 
     return data, meta
