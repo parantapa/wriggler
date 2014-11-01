@@ -111,12 +111,15 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
         if 200 <= r.status_code < 300 or r.status_code in accept_codes:
             auth.check_limit(r.headers)
 
-            ## DEBUG
-            # import json
-            # print(json.dumps(r.json(), sort_keys=True, indent=4, separators=(',', ': ')))
-            # print(r.status_code)
+            try:
+                data = r.json()
+            except ValueError:
+                log.info(u"Try L1 {}: Falied to decode Json - {} {}",
+                         tries, r.status_code, r.text)
+                tries += 1
+                continue
 
-            return (r.json(), r.status_code)
+            return (data, r.status_code)
 
         # Check if rate limited
         if r.status_code == 429:
@@ -186,7 +189,7 @@ def statuses_user_timeline(auth, **params):
         max_id = min(tweet["id"] for tweet in data) - 1
         since_id = max(tweet["id"] for tweet in data)
         count = len(data)
-    except (ValueError, KeyError):
+    except (ValueError, KeyError, TypeError):
         max_id, since_id, count = None, None, 0
 
     meta = {
@@ -214,7 +217,7 @@ def search_tweets(auth, **params):
         max_id = min(tweet["id"] for tweet in data["statuses"]) - 1
         since_id = min(tweet["id"] for tweet in data["statuses"])
         count = len(data["statuses"])
-    except (ValueError, KeyError):
+    except (ValueError, KeyError, TypeError):
         max_id, since_id, count = None, None, 0
 
     meta = {
