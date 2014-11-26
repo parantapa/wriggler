@@ -12,6 +12,9 @@ CLIENT = "wriggler.gsb"
 PVER = 3.0
 ENDPOINT = "https://sb-ssl.google.com/safebrowsing/api/lookup"
 
+# max request body size
+MAX_SIZE = 10 * 1024
+
 ERROR_CODES = {
     400: ("Bad Request", "The HTTP request was not correctly formed"),
     401: ("Not Authorized", "The apikey is not authorized"),
@@ -46,21 +49,40 @@ class GoogleSafeBrowsingError(Error):
         hdr = hdr.format(self.http_status_code, etext, edesc)
         return hdr + "\n--------\n" + body
 
-def lookup(auth, urls):
+
+def make_body(urls, idx):
     """
-    Check ecah url using Google Safe Browsing Lookup API.
+    Create the body of the next request.
+    """
 
-    Returns a dict mapping each url to the api response.
+    if idx >= len(urls):
+        return [], "", idx
 
-    key  - API Key
-    urls - List of urls to check
+    us = [urls[idx]]
+    body = "\n" + urls[idx]
+    count = 1
+    idx += 1
+
+    while idx < len(urls):
+        if count >= 500:
+            break
+        if len(body) + 1 + len(urls[idx]) > MAX_SIZE:
+            break
+
+        us.append(urls[idx])
+        body = body + "\n" + urls[idx]
+        count += 1
+        idx += 1
+
+    return us, str(count) + body, idx
+
+def do_lookup(auth, urls, data):
+    """
+    Do the actual call.
     """
 
     # Generate the get params
     params = {"client": CLIENT, "appver": 0.1, "apikey": auth, "pver": PVER}
-
-    # Generate the post body
-    data = str(len(urls)) + "\n" + "\n".join(urls)
 
     # Make the request
     tries = 0
@@ -81,13 +103,32 @@ def lookup(auth, urls):
         # Server side error Retry
         if 500 <= r.status_code < 600:
             log.info(u"Try L1 {}: Server side error {} {}",
-                     tries, r.status_code, r.text)
+                    tries, r.status_code, r.text)
             time.sleep(const.API_RETRY_AFTER)
 
-        # Some other error; Break out of loop
+        # Some other error
         break
 
     log.error(u"Try L1 {}: Unexepectd response - {} {}",
-              tries, r.status_code, r.text)
+            tries, r.status_code, r.text)
     raise GoogleSafeBrowsingError(r)
 
+def lookup(auth, urls):
+    """
+    Check ecah url using Google Safe Browsing Lookup API.
+
+    Returns a dict mapping each url to the api response.
+
+    key  - API Key
+    urls - List of urls to check
+    """
+
+    idx = 0
+    while True:
+        us, data, nidx = make_body(urls, idx)
+        if nidx <= idx:
+            break
+        idx = nidx
+
+        resp = do_lookup(auth, us, data)
+        yield resp
