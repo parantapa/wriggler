@@ -46,7 +46,7 @@ class MultiAuth(object):
             self.remain[self.idx] = int(headers["X-Rate-Limit-Remaining"])
             self.reset[self.idx]  = int(headers["X-Rate-Limit-Reset"]) - curtime
         except KeyError as e:
-            log.warn(u"Header not found! - {} {}", type(e), e)
+            log.warn(u"Rate Limit headers not found! - {} {}", type(e), e)
             time.sleep(const.API_RETRY_MAX)
             return
 
