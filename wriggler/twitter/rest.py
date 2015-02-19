@@ -92,7 +92,7 @@ def cursor_iter(func, maxitems, auth, **params):
         count += meta["count"]
         params["cursor"] = meta["next_cursor"]
 
-def twitter_rest_call(endpoint, auth, accept_codes, params):
+def twitter_rest_call(endpoint, auth, accept_codes, params, method="get"):
     """
     Call a Twitter rest api endpoint.
     """
@@ -105,7 +105,12 @@ def twitter_rest_call(endpoint, auth, accept_codes, params):
 
     tries = 0
     while tries < const.API_RETRY_MAX:
-        r = req.get(endpoint, params=params, auth=oauth, timeout=60.0)
+        if method == "get":
+            r = req.get(endpoint, params=params, auth=oauth, timeout=60.0)
+        elif method == "post":
+            r = req.post(endpoint, data=params, auth=oauth, timeout=60.0)
+        else:
+            raise ValueError("Invalid value for parameter 'method'")
 
         # Proper receive
         if 200 <= r.status_code < 300 or r.status_code in accept_codes:
@@ -170,7 +175,7 @@ def users_lookup(auth, **params):
     if "screen_name" in params:
         params["screen_name"] = list_to_csv(params["screen_name"])
 
-    data, code = twitter_rest_call(endpoint, auth, accept_codes, params)
+    data, code = twitter_rest_call(endpoint, auth, accept_codes, params, method="post")
     return data, {"code": code}
 
 def statuses_user_timeline(auth, **params):
