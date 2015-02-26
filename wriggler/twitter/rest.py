@@ -127,7 +127,7 @@ def twitter_rest_call(endpoint, auth, accept_codes, params, method="get"):
             return (data, r.status_code)
 
         # Check if rate limited
-        if r.status_code == 429:
+        if r.status_code in (431, 429):
             log.info(u"Try L1 {}: Being throttled - {} {}",
                      tries, r.status_code, r.text)
             auth.check_limit(r.headers)
