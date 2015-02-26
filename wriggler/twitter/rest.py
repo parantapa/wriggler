@@ -140,6 +140,7 @@ def twitter_rest_call(endpoint, auth, accept_codes, params, method="get"):
                      tries, r.status_code, r.text)
             auth.check_limit(r.headers)
             tries += 1
+            continue
 
         # Some other error; Break out of loop
         break
