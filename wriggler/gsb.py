@@ -50,31 +50,23 @@ class GoogleSafeBrowsingError(Error):
         return hdr + "\n--------\n" + body
 
 
-def make_body(urls, idx):
+def make_body(urls):
     """
     Create the body of the next request.
     """
 
-    if idx >= len(urls):
-        return [], "", idx
+    us, body = [], ""
 
-    us = [urls[idx]]
-    body = "\n" + urls[idx]
-    count = 1
-    idx += 1
+    for url in urls:
+        us.append(url)
+        body = body + "\n" + url
 
-    while idx < len(urls):
-        if count >= 500:
-            break
-        if len(body) + 1 + len(urls[idx]) > MAX_SIZE:
-            break
+        if len(us) == 500 or len(body) >= MAX_SIZE:
+            yield us, str(len(us)) + body
+            us, body = [], ""
 
-        us.append(urls[idx])
-        body = body + "\n" + urls[idx]
-        count += 1
-        idx += 1
-
-    return us, str(count) + body, idx
+    if us:
+        yield us, str(len(us)) + body
 
 def do_lookup(auth, urls, data):
     """
@@ -123,12 +115,6 @@ def lookup(auth, urls):
     urls - List of urls to check
     """
 
-    idx = 0
-    while True:
-        us, data, nidx = make_body(urls, idx)
-        if nidx <= idx:
-            break
-        idx = nidx
-
+    for us, data in make_body(urls):
         resp = do_lookup(auth, us, data)
         yield resp
