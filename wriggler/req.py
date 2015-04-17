@@ -26,13 +26,13 @@ def robust_http(args, kwargs, method):
     for tries in xrange(const.CONNECT_RETRY_MAX):
         try:
             return method(*args, **kwargs)
-        except requests.RequestException as e:
-            msg = u"Try L0: {} - Get Failed: {}: {}"
-            log.info(msg, tries, type(e), e)
+        except requests.RequestException:
+            msg = u"Try L0: {} - HTTP Request Failed"
+            log.info(msg, tries, exc_info=True)
             sleep(const.CONNECT_RETRY_AFTER)
-        except Exception as e:
-            msg = u"Try L0: {} - Get Failed: {}: {}"
-            log.warn(msg, tries, type(e), e)
+        except Exception:
+            msg = u"Try L0: {} - HTTP Request Failed"
+            log.warn(msg, tries, exc_info=True)
             sleep(const.CONNECT_RETRY_AFTER)
 
     # Cant help any more; Quit program
