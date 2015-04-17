@@ -119,7 +119,7 @@ def twitter_rest_call(endpoint, auth, accept_codes, params, method="get"):
             try:
                 data = r.json()
             except ValueError:
-                log.info(u"Try L1 {}: Falied to decode Json - {} {}",
+                log.info(u"Try L1 {}: Falied to decode Json - {}\n{}",
                          tries, r.status_code, r.text)
                 tries += 1
                 continue
@@ -128,7 +128,7 @@ def twitter_rest_call(endpoint, auth, accept_codes, params, method="get"):
 
         # Check if rate limited
         if r.status_code in (431, 429):
-            log.info(u"Try L1 {}: Being throttled - {} {}",
+            log.info(u"Try L1 {}: Being throttled - {}\n{}",
                      tries, r.status_code, r.text)
             auth.check_limit(r.headers)
             tries += 1
@@ -136,7 +136,7 @@ def twitter_rest_call(endpoint, auth, accept_codes, params, method="get"):
 
         # Server side error; Retry after delay
         if 500 <= r.status_code < 600:
-            log.info(u"Try L1 {}: Server side error {} {}",
+            log.info(u"Try L1 {}: Server side error {}\n{}",
                      tries, r.status_code, r.text)
             auth.check_limit(r.headers)
             tries += 1
@@ -145,7 +145,7 @@ def twitter_rest_call(endpoint, auth, accept_codes, params, method="get"):
         # Some other error; Break out of loop
         break
 
-    log.error(u"Try L1 {}: Unexepectd response - {} {}",
+    log.error(u"Try L1 {}: Unexepectd response - {}\n{}",
               tries, r.status_code, r.text)
     raise TwitterRestAPIError(r)
 
