@@ -17,48 +17,47 @@ class ConnectFailError(Error):
     Raised on error cases.
     """
 
-def robust_http(args, kwargs, method):
+def robust_http(url, method, args, kwargs):
     """
     Repeat the HTTP GET/POST operatopn in case of failure.
     """
 
+    assert method in ("get", "post")
+
+    # Get the function to be called
+    session = kwargs.get("session", None)
+    if session is None:
+        to_call = getattr(requests, method)
+    else:
+        to_call = getattr(session, method)
+
     # Keep trying for downlod
     for tries in xrange(const.CONNECT_RETRY_MAX):
         try:
-            return method(*args, **kwargs)
+            return to_call(url, *args, **kwargs)
         except requests.RequestException:
-            msg = u"Try L0: {} - HTTP Request Failed"
-            log.info(msg, tries, exc_info=True)
+            msg = u"Try L0: {} - {} Request Failed\n{}\n"
+            log.info(msg, tries, method.upper(), url, exc_info=True)
             sleep(const.CONNECT_RETRY_AFTER)
-        except Exception:
-            msg = u"Try L0: {} - HTTP Request Failed"
-            log.warn(msg, tries, exc_info=True)
+        except Exception: # pylint: disable=broad-except
+            msg = u"Try L0: {} - {} Request Failed\n{}\n"
+            log.warn(msg, tries, method.upper(), url, exc_info=True)
             sleep(const.CONNECT_RETRY_AFTER)
 
     # Cant help any more; Quit program
-    msg = "Falied to make http request!"
-    log.critical(msg)
-    raise ConnectFailError(msg)
+    raise ConnectFailError(url, method)
 
-def get(*args, **kwargs):
+def get(url, *args, **kwargs):
     """
     Perform a robust GET request.
     """
 
-    session = kwargs.get("session", None)
-    if session is None:
-        return robust_http(args, kwargs, requests.get)
-    else:
-        return robust_http(args, kwargs, session.get)
+    return robust_http(url, "get", args, kwargs)
 
-def post(*args, **kwargs):
+def post(url, *args, **kwargs):
     """
     Perform a robust POST request.
     """
 
-    session = kwargs.get("session", None)
-    if session is None:
-        return robust_http(args, kwargs, requests.post)
-    else:
-        return robust_http(args, kwargs, session.post)
+    return robust_http(url, "post", args, kwargs)
 
