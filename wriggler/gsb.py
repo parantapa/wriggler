@@ -29,10 +29,12 @@ class GoogleSafeBrowsingError(Error):
     Error returned from google safe browsing api.
     """
 
-    def __init__(self, response):
-        super(GoogleSafeBrowsingError, self).__init__(response)
+    def __init__(self, response, tries):
+        super(GoogleSafeBrowsingError, self).__init__(response, tries)
 
         self.response = response
+        self.tries = tries
+
         self.http_status_code = response.status_code
         self.body = response.text
 
@@ -48,7 +50,6 @@ class GoogleSafeBrowsingError(Error):
         hdr = "GoogleSafeBrowsingError\nhttp_status_code: {0} - {1}\n{2}"
         hdr = hdr.format(self.http_status_code, etext, edesc)
         return hdr + "\n--------\n" + body
-
 
 def make_body(urls):
     """
@@ -95,15 +96,13 @@ def do_lookup(auth, urls, data):
         # Server side error Retry
         if 500 <= r.status_code < 600:
             log.info(u"Try L1 {}: Server side error {} {}",
-                    tries, r.status_code, r.text)
+                tries, r.status_code, r.text)
             time.sleep(const.API_RETRY_AFTER)
 
         # Some other error
         break
 
-    log.error(u"Try L1 {}: Unexepectd response - {} {}",
-            tries, r.status_code, r.text)
-    raise GoogleSafeBrowsingError(r)
+    raise GoogleSafeBrowsingError(r, tries)
 
 def lookup(auth, urls):
     """

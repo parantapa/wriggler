@@ -23,10 +23,11 @@ class TwitterRestAPIError(Error):
     The Twitter API returned an error.
     """
 
-    def __init__(self, response):
-        super(TwitterRestAPIError, self).__init__(response)
+    def __init__(self, response, tries):
+        super(TwitterRestAPIError, self).__init__(response, tries)
 
         self.response = response
+        self.tries = tries
 
         self.http_status_code = response.status_code
         try:
@@ -145,9 +146,7 @@ def twitter_rest_call(endpoint, auth, accept_codes, params, method="get"):
         # Some other error; Break out of loop
         break
 
-    log.error(u"Try L1 {}: Unexepectd response - {}\n{}",
-              tries, r.status_code, r.text)
-    raise TwitterRestAPIError(r)
+    raise TwitterRestAPIError(r, tries)
 
 def users_show(auth, **params):
     """
