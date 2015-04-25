@@ -1,0 +1,49 @@
+"""
+Test the Foursquare API
+"""
+
+import json
+import pytest
+import wriggler.foursquare as fsq
+
+LOCATIONS = [
+    "25.5933,85.1667", # Kankarbagh, Patna
+    "22.3193,87.3099", # IIT Kharagpur
+    "28.5597,77.2038", # Green Park Extension, Delhi
+    "44.3,37.2", # Chicago, IL
+]
+
+CHECK_KEYS = [
+    "headerLocationGranularity",
+    "headerLocation",
+    "headerFullLocation",
+    "groups"
+]
+
+@pytest.fixture
+def samp_key():
+    """
+    Return the sample auth object.
+    """
+
+    kfname = "fsq-test-key.json"
+    with open(kfname) as fobj:
+        key = json.load(fobj)
+
+    return key
+
+# pylint: disable=redefined-outer-name
+def test_lookup(samp_key):
+    """
+    Test the google safe browsing lookup function.
+    """
+
+    for location in LOCATIONS:
+        params = {"ll": location}
+        results, code = fsq.venues_explore(samp_key, **params)
+        assert code == 200
+        assert results["meta"]["code"] == 200
+
+        for key in CHECK_KEYS:
+            assert key in results["response"]
+        assert len(results["response"]["groups"]) > 0

@@ -14,6 +14,9 @@ API_RETRY_AFTER = 5
 # Maximum number of api retries
 API_RETRY_MAX = 10
 
+# In case ratelimit is hit, wake 5 secs after the reset time is over.
+API_RESET_BUFFER = 5
+
 # Twitter Sepcific Constants
 ############################
 
