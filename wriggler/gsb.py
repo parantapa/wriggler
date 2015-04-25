@@ -1,5 +1,5 @@
 """
-Python API for Google Safe Browsing Lookup API
+API for Google Safe Browsing Lookup API
 """
 
 import time
