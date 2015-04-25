@@ -14,9 +14,8 @@ API_RETRY_AFTER = 5
 # Maximum number of api retries
 API_RETRY_MAX = 10
 
-################################################################################
-#                          Twitter Sepcific Constants                          #
-################################################################################
+# Twitter Sepcific Constants
+############################
 
 # Wait for this many seconds after the start of new rate limit window.
 TWITTER_RATE_LIMIT_RESET_BUFFER = 5
