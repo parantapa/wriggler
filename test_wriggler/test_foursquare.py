@@ -7,9 +7,7 @@ import pytest
 import wriggler.foursquare as fsq
 
 LOCATIONS = [
-    "25.5933,85.1667", # Kankarbagh, Patna
     "22.3193,87.3099", # IIT Kharagpur
-    "28.5597,77.2038", # Green Park Extension, Delhi
     "44.3,37.2", # Chicago, IL
 ]
 
