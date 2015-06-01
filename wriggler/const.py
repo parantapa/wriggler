@@ -17,15 +17,3 @@ API_RETRY_MAX = 10
 # In case ratelimit is hit, wake 5 secs after the reset time is over.
 API_RESET_BUFFER = 5
 
-# Twitter Sepcific Constants
-############################
-
-# Wait for this many seconds after the start of new rate limit window.
-TWITTER_RATE_LIMIT_RESET_BUFFER = 5
-
-# Stop making requests when this many requests is allowed
-TWITTER_RATE_LIMIT_BUFFER = 1
-
-# The rate limit time window as set by Twitter = 15 minutes
-TWITTER_DEFAULT_WINDOW_TIME = 15 * 60
-

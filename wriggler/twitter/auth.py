@@ -12,6 +12,8 @@ from dateutil.parser import parse
 from wriggler import log
 import wriggler.const as const
 
+from wriggler.check_rate_limit import check_rate_limit
+
 class MultiAuth(object):
     """
     Manage multiple twitter keys.
@@ -22,10 +24,9 @@ class MultiAuth(object):
 
         now = arrow.now().timestamp
 
-        self.idx    = 0
-        self.keys   = keys
-        self.remain = [sys.maxsize] * len(keys)
-        self.reset  = [now + const.TWITTER_DEFAULT_WINDOW_TIME] * len(keys)
+        self.idx = 0
+        self.keys = keys
+        self.reset = [now] * len(keys)
 
     def get_token(self):
         """
@@ -40,28 +41,20 @@ class MultiAuth(object):
         """
 
         now = arrow.now().timestamp
+        sleep_time = check_rate_limit(headers)
 
-        try:
-            curtime = arrow.get(parse(headers["date"])).timestamp
-            self.remain[self.idx] = int(headers["X-Rate-Limit-Remaining"])
-            self.reset[self.idx]  = int(headers["X-Rate-Limit-Reset"]) - curtime
-        except KeyError as e:
-            log.warn(u"Rate Limit headers not found! - {}", e)
-            time.sleep(const.API_RETRY_MAX)
-            return
-
-        # Reset time in our system time
-        self.reset[self.idx] += now + const.TWITTER_RATE_LIMIT_RESET_BUFFER
-
-        # If we hit rate limit switch to the next key
-        if self.remain[self.idx] <= const.TWITTER_RATE_LIMIT_BUFFER:
+        if sleep_time:
             log.debug("Key {} hit rate limit ...", self.idx)
+
+            # Save the reset time
+            self.reset[self.idx] = now + sleep_time
+
+            # Move on to the next key
             self.idx = (self.idx + 1) % len(self.keys)
 
-            # The next key had also hit rate limit previously
-            # Sleep off the rate limit window
-            if (self.remain[self.idx] <= const.TWITTER_RATE_LIMIT_BUFFER
-                    and self.reset[self.idx] > now):
+            # If the next key is also under ratelimit,
+            # sleep off the rate limit window
+            if self.reset[self.idx] > now:
                 log.debug("Key {} still in rate limit ...", self.idx)
                 time.sleep(self.reset[self.idx] - now)
 

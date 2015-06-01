@@ -11,6 +11,7 @@ from dateutil.parser import parse
 from wriggler import log, Error
 import wriggler.const as const
 import wriggler.req as req
+from wriggler.check_rate_limit import check_rate_limit
 
 VERSION = 20150425
 MODE = "foursquare"
@@ -125,42 +126,6 @@ class FoursquareError(Error):
                           self.error_type, edesc,
                           self.error_detail,
                           btext)
-
-def check_rate_limit(headers):
-    """
-    Return the number of seconds to sleep off the rate limit.
-    """
-
-    # Check if we have hit the rate limit
-    # In case the header was not found,
-    # assume rate limit was hit
-    try:
-        remain = headers["X-Rate-Limit-Remaining"]
-        remain = int(remain)
-    except (KeyError, ValueError):
-        remain = 0
-
-    # We still have more api calls left
-    if remain > 0:
-        return 0
-
-    # Compute the time to sleep
-    # from server ratelimit reset header and server date header
-    try:
-        server_time = headers["date"]
-        server_time = parse(server_time)
-        server_time = arrow.get(server_time).timestamp
-
-        reset_time = headers["X-Rate-Limit-Reset"]
-        reset_time = int(reset_time)
-
-        sleep_time = reset_time - server_time
-        sleep_time = max(sleep_time, 0) + const.API_RESET_BUFFER
-    except (KeyError, TypeError):
-        sleep_time = const.API_RETRY_AFTER
-
-    # Return recommended seconds to sleep
-    return sleep_time
 
 def rest_api_call(endpoint, auth, accept_codes, params):
     """

@@ -54,12 +54,21 @@ class TwitterRestAPIError(Error):
                                                 ("Unknown", "Unknown"))
         etext, edesc = ec.ERROR_CODES.get(self.error_code,
                                           ("Unknown", "Unknown"))
-        body = unicode(self.body).encode("utf-8")
+        body = self.body.encode("utf-8")
 
-        hdr = "TwitterRestAPIError\nhttp_status_code: {0} - {1}\n{2}\nerror_code: {3} - {4}\n{5}"
-        hdr = hdr.format(self.http_status_code, htext, hdesc,
-                         self.error_code, etext, edesc)
-        return hdr + "\n--------\n" + body
+        hdr = ("TwitterRestAPIError\n"
+               "http_status_code: {0} - {1}\n"
+               "{2}\n"
+               "error_code: {3} - {4}\n"
+               "{5}\n"
+               "--------\n"
+               "{6}")
+
+        return hdr.format(self.http_status_code, htext,
+                          hdesc,
+                          self.error_code, etext,
+                          edesc,
+                          body)
 
 def id_iter(func, maxitems, auth, **params):
     """

@@ -43,13 +43,17 @@ class GoogleSafeBrowsingError(Error):
         return fmt.format(self.http_status_code)
 
     def __str__(self):
-        etext, edesc = ERROR_CODES.get(self.http_status_code,
-                                       ("Unknown", "Unknown"))
-        body = unicode(self.body).encode("utf-8")
+        etext, edesc = ERROR_CODES.get(
+            self.http_status_code,
+            ("Unknown", "Unknown"))
 
-        hdr = "GoogleSafeBrowsingError\nhttp_status_code: {0} - {1}\n{2}"
-        hdr = hdr.format(self.http_status_code, etext, edesc)
-        return hdr + "\n--------\n" + body
+        body = self.body.encode("utf-8")
+
+        hdr = ("GoogleSafeBrowsingError\n"
+               "http_status_code: {0} - {1}\n"
+               "{2}\n"
+               "--------\n{3}")
+        return hdr.format(self.http_status_code, etext, edesc, body)
 
 def make_body(urls):
     """
@@ -96,7 +100,7 @@ def do_lookup(auth, urls, data):
         # Server side error Retry
         if 500 <= r.status_code < 600:
             log.info(u"Try L1 {}: Server side error {} {}",
-                tries, r.status_code, r.text)
+                     tries, r.status_code, r.text)
             time.sleep(const.API_RETRY_AFTER)
 
         # Some other error
