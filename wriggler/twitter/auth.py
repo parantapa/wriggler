@@ -28,7 +28,8 @@ class MultiAuth(object):
         self.keys = keys
         self.reset = [now] * len(keys)
 
-    def get_token(self):
+    @property
+    def token(self):
         """
         Get a token for the call.
         """

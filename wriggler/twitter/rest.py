@@ -70,9 +70,9 @@ class TwitterRestAPIError(Error):
                           edesc,
                           body)
 
-def id_iter(func, maxitems, auth, **params):
+def id_iter(func, maxitems, auth, params):
     """
-    Iterate over the calls of the function using max_id
+    Iterate over the calls of the function using max_id.
     """
 
     count = 0
@@ -87,7 +87,7 @@ def id_iter(func, maxitems, auth, **params):
         count += meta["count"]
         params["max_id"] = meta["max_id"]
 
-def cursor_iter(func, maxitems, auth, **params):
+def cursor_iter(func, maxitems, auth, params):
     """
     Iteratie over the calls of the function using cursor.
     """
@@ -102,7 +102,7 @@ def cursor_iter(func, maxitems, auth, **params):
         count += meta["count"]
         params["cursor"] = meta["next_cursor"]
 
-def twitter_rest_call(endpoint, auth, accept_codes, params, method="get"):
+def rest_call(endpoint, auth, accept_codes, params, method="get"):
     """
     Call a Twitter rest api endpoint.
     """
@@ -110,8 +110,7 @@ def twitter_rest_call(endpoint, auth, accept_codes, params, method="get"):
     ## DEBUG
     # print(endpoint)
 
-    token = auth.get_token()
-    oauth = OAuth1(signature_type="auth_header", **token)
+    oauth = OAuth1(signature_type="auth_header", **auth.token)
 
     tries = 0
     while tries < const.API_RETRY_MAX:
@@ -167,7 +166,7 @@ def users_show(auth, **params):
 
     params.setdefault("include_entities", 1)
 
-    data, code = twitter_rest_call(endpoint, auth, accept_codes, params)
+    data, code = rest_call(endpoint, auth, accept_codes, params)
     return data, {"code": code}
 
 def users_lookup(auth, **params):
@@ -184,7 +183,7 @@ def users_lookup(auth, **params):
     if "screen_name" in params:
         params["screen_name"] = list_to_csv(params["screen_name"])
 
-    data, code = twitter_rest_call(endpoint, auth, accept_codes, params, method="post")
+    data, code = rest_call(endpoint, auth, accept_codes, params, method="post")
     return data, {"code": code}
 
 def statuses_user_timeline(auth, **params):
@@ -192,13 +191,17 @@ def statuses_user_timeline(auth, **params):
     Get the user timeline of a single user.
     """
 
+    maxitems = params.pop("maxitems", 0)
+    if maxitems > 0:
+        return id_iter(statuses_user_timeline, maxitems, auth, params)
+
     endpoint = "https://api.twitter.com/1.1/statuses/user_timeline.json"
     accept_codes = (403, 404)
 
     params.setdefault("include_rts", 1)
     params.setdefault("count", 200)
 
-    data, code = twitter_rest_call(endpoint, auth, accept_codes, params)
+    data, code = rest_call(endpoint, auth, accept_codes, params)
     try:
         max_id = min(tweet["id"] for tweet in data) - 1
         since_id = max(tweet["id"] for tweet in data)
@@ -220,13 +223,17 @@ def search_tweets(auth, **params):
     Search twitter for tweets.
     """
 
+    maxitems = params.pop("maxitems", 0)
+    if maxitems > 0:
+        return id_iter(search_tweets, maxitems, auth, params)
+
     endpoint = 'https://api.twitter.com/1.1/search/tweets.json'
     accept_codes = ()
 
     params.setdefault("count", 100)
     params.setdefault("include_entities", "true")
 
-    data, code = twitter_rest_call(endpoint, auth, accept_codes, params)
+    data, code = rest_call(endpoint, auth, accept_codes, params)
     try:
         max_id = min(tweet["id"] for tweet in data["statuses"]) - 1
         since_id = min(tweet["id"] for tweet in data["statuses"])
@@ -248,12 +255,16 @@ def friends_ids(auth, **params):
     Get the friend ids of a given user.
     """
 
+    maxitems = params.pop("maxitems", 0)
+    if maxitems > 0:
+        return cursor_iter(friends_ids, maxitems, auth, params)
+
     endpoint = "https://api.twitter.com/1.1/friends/ids.json"
     accept_codes = (403, 404)
 
     params.setdefault("count", 5000)
 
-    data, code = twitter_rest_call(endpoint, auth, accept_codes, params)
+    data, code = rest_call(endpoint, auth, accept_codes, params)
     try:
         next_cursor = data["next_cursor"]
         count = len(data["ids"])
@@ -273,12 +284,16 @@ def followers_ids(auth, **params):
     Get the friend ids of a given user.
     """
 
+    maxitems = params.pop("maxitems", 0)
+    if maxitems > 0:
+        return cursor_iter(followers_ids, maxitems, auth, params)
+
     endpoint = "https://api.twitter.com/1.1/followers/ids.json"
     accept_codes = (403, 404)
 
     params.setdefault("count", 5000)
 
-    data, code = twitter_rest_call(endpoint, auth, accept_codes, params)
+    data, code = rest_call(endpoint, auth, accept_codes, params)
     try:
         next_cursor = data["next_cursor"]
         count = len(data["ids"])

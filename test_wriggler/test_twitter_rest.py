@@ -7,10 +7,12 @@ import pytest
 import wriggler.twitter.auth as auth
 import wriggler.twitter.rest as rest
 
-U = [
+TEST_USERS = [
     (813286, "BarackObama"),
     (145125358, "SrBachchan")
 ]
+
+TEST_QUERY = ["news", "ff"]
 
 @pytest.fixture
 def samp_auth():
@@ -27,25 +29,26 @@ def test_users_show(samp_auth):
     Test the users_show method.
     """
 
-    params = {"user_id": U[0][0]}
-    profile, meta = rest.users_show(samp_auth, **params)
-    assert meta["code"] == 200
-    assert profile["id"] == U[0][0]
-    assert profile["screen_name"] == U[0][1]
+    for user_id, screen_name in TEST_USERS:
+        params = {"user_id": user_id}
+        profile, meta = rest.users_show(samp_auth, **params)
+        assert meta["code"] == 200
+        assert profile["id"] == user_id
+        assert profile["screen_name"] == screen_name
 
-    params = {"screen_name": U[0][1]}
-    profile, meta = rest.users_show(samp_auth, **params)
-    assert meta["code"] == 200
-    assert profile["id"] == U[0][0]
-    assert profile["screen_name"] == U[0][1]
+        params = {"screen_name": screen_name}
+        profile, meta = rest.users_show(samp_auth, **params)
+        assert meta["code"] == 200
+        assert profile["id"] == user_id
+        assert profile["screen_name"] == screen_name
 
 def test_users_lookup(samp_auth):
     """
     Test the users_lookup method.
     """
 
-    user_ids = set(u[0] for u in U)
-    screen_names = set(u[1] for u in U)
+    user_ids = set(u[0] for u in TEST_USERS)
+    screen_names = set(u[1] for u in TEST_USERS)
 
     params = {"user_id": list(user_ids)}
     profiles, meta = rest.users_lookup(samp_auth, **params)
@@ -64,106 +67,108 @@ def test_statuses_user_timeline(samp_auth):
     Test the statuses/user_timeline method.
     """
 
-    params = {"user_id": U[0][0], "count": 10}
-    tweets, meta = rest.statuses_user_timeline(samp_auth, **params)
-    assert meta["code"] == 200
-    assert all(t["user"]["id"] == U[0][0] for t in tweets)
-    assert all(t["user"]["screen_name"] == U[0][1] for t in tweets)
+    for user_id, screen_name in TEST_USERS:
+        params = {"user_id": user_id, "count": 10}
+        tweets, meta = rest.statuses_user_timeline(samp_auth, **params)
+        assert meta["code"] == 200
+        assert all(t["user"]["id"] == user_id for t in tweets)
+        assert all(t["user"]["screen_name"] == screen_name for t in tweets)
 
-    params = {"screen_name": U[0][1], "count": 10}
-    tweets, meta = rest.statuses_user_timeline(samp_auth, **params)
-    assert meta["code"] == 200
-    assert all(t["user"]["id"] == U[0][0] for t in tweets)
-    assert all(t["user"]["screen_name"] == U[0][1] for t in tweets)
+        params = {"screen_name": screen_name, "count": 10}
+        tweets, meta = rest.statuses_user_timeline(samp_auth, **params)
+        assert meta["code"] == 200
+        assert all(t["user"]["id"] == user_id for t in tweets)
+        assert all(t["user"]["screen_name"] == screen_name for t in tweets)
 
 def test_statuses_user_timeline_iter(samp_auth):
     """
     Test the statuses/user_timeline method using id_iter.
     """
 
-    params = {"user_id": U[0][0], "count": 10}
-    results = []
-    for tweets, meta in rest.id_iter(rest.statuses_user_timeline, 20, samp_auth,
-                                    **params):
-        assert meta["code"] == 200
-        results.extend(tweets)
-    assert all(t["user"]["id"] == U[0][0] for t in results)
-    assert all(t["user"]["screen_name"] == U[0][1] for t in results)
-    assert len(results) == 20
-    assert len(set(r["id"] for r in results)) == 20
+    for user_id, screen_name in TEST_USERS:
+        params = {"user_id": user_id, "count": 10, "maxitems": 20}
+        results = []
+        for tweets, meta in rest.statuses_user_timeline(samp_auth, **params):
+            assert meta["code"] == 200
+            results.extend(tweets)
+        assert all(t["user"]["id"] == user_id for t in results)
+        assert all(t["user"]["screen_name"] == screen_name for t in results)
+        assert len(results) == 20
+        assert len(set(r["id"] for r in results)) == 20
 
 def test_search_tweets(samp_auth):
     """
     Test the tweets_search method.
     """
 
-    query = "news"
-
-    params = {"q": query, "result_type": "recent"}
-    tweets, meta = rest.search_tweets(samp_auth, **params)
-    assert meta["code"] == 200
+    for query in TEST_QUERY:
+        params = {"q": query, "result_type": "recent"}
+        _, meta = rest.search_tweets(samp_auth, **params)
+        assert meta["code"] == 200
 
 def test_search_tweets_iter(samp_auth):
     """
     Test the tweets_search method w/ id_iter.
     """
 
-    query = "news"
-
-    params = {"q": query, "result_type": "recent", "count": 10}
-    results = []
-    for data, meta in rest.id_iter(rest.search_tweets, 20, samp_auth, **params):
-        assert meta["code"] == 200
-        results.extend(data["statuses"])
-    assert len(results) == 20
-    assert len(set(r["id"] for r in results)) == 20
+    for query in TEST_QUERY:
+        params = {"q": query, "result_type": "recent", "count": 10,
+                  "maxitems": 20}
+        results = []
+        for data, meta in rest.search_tweets(samp_auth, **params):
+            assert meta["code"] == 200
+            results.extend(data["statuses"])
+        assert len(results) == 20
+        assert len(set(r["id"] for r in results)) == 20
 
 def test_friends_ids(samp_auth):
     """
     Test friends/ids method.
     """
 
-    params = {"user_id": U[0][0], "count": 10}
-    data, meta = rest.friends_ids(samp_auth, **params)
-    assert meta["code"] == 200
-    assert len(data["ids"]) == 10
+    for user_id, _ in TEST_USERS:
+        params = {"user_id": user_id, "count": 10}
+        data, meta = rest.friends_ids(samp_auth, **params)
+        assert meta["code"] == 200
+        assert len(data["ids"]) == 10
 
 def test_friends_ids_iter(samp_auth):
     """
     Test friends/ids method w/ cursor_iter.
     """
 
-    params = {"user_id": U[0][0], "count": 10}
-    results = []
-    for data, meta in rest.cursor_iter(rest.friends_ids, 20, samp_auth,
-                                       **params):
-        assert meta["code"] == 200
-        assert len(data["ids"]) == 10
-        results.extend(data["ids"])
-    assert len(results) == 20
-    assert len(set(results)) == 20
+    for user_id, _ in TEST_USERS:
+        params = {"user_id": user_id, "count": 10, "maxitems": 20}
+        results = []
+        for data, meta in rest.friends_ids(samp_auth, **params):
+            assert meta["code"] == 200
+            assert len(data["ids"]) == 10
+            results.extend(data["ids"])
+        assert len(results) == 20
+        assert len(set(results)) == 20
 
 def test_followers_ids(samp_auth):
     """
     Test followers/ids method.
     """
 
-    params = {"user_id": U[0][0], "count": 10}
-    data, meta = rest.followers_ids(samp_auth, **params)
-    assert meta["code"] == 200
-    assert len(data["ids"]) == 10
+    for user_id, _ in TEST_USERS:
+        params = {"user_id": user_id, "count": 10}
+        data, meta = rest.followers_ids(samp_auth, **params)
+        assert meta["code"] == 200
+        assert len(data["ids"]) == 10
 
 def test_followers_ids_iter(samp_auth):
     """
     Test followers/ids method w/ cursor_iter.
     """
 
-    params = {"user_id": U[0][0], "count": 10}
-    results = []
-    for data, meta in rest.cursor_iter(rest.followers_ids, 20, samp_auth,
-                                       **params):
-        assert meta["code"] == 200
-        results.extend(data["ids"])
-    assert len(results) == 20
-    assert len(set(results)) == 20
+    for user_id, _ in TEST_USERS:
+        params = {"user_id": user_id, "count": 10, "maxitems": 20}
+        results = []
+        for data, meta in rest.followers_ids(samp_auth, **params):
+            assert meta["code"] == 200
+            results.extend(data["ids"])
+        assert len(results) == 20
+        assert len(set(results)) == 20
 
