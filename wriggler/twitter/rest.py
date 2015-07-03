@@ -2,6 +2,8 @@
 Robust Twitter crawler primitives.
 """
 
+import json
+
 from requests_oauthlib import OAuth1
 
 from wriggler import log, Error
@@ -54,7 +56,11 @@ class TwitterRestAPIError(Error):
                                                 ("Unknown", "Unknown"))
         etext, edesc = ec.ERROR_CODES.get(self.error_code,
                                           ("Unknown", "Unknown"))
-        body = self.body.encode("utf-8")
+
+        if self.parsed_body:
+            body = json.dumps(self.body)
+        else:
+            body = self.body.encode("utf-8")
 
         hdr = ("TwitterRestAPIError\n"
                "http_status_code: {0} - {1}\n"
