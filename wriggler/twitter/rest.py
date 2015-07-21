@@ -305,3 +305,21 @@ def followers_ids(auth, **params):
     }
 
     return data, meta
+
+def trends_available(auth):
+    """
+    Get the list of places for which Twitter has trends.
+    """
+
+    endpoint = "https://api.twitter.com/1.1/trends/available.json"
+    data, code = rest_call(endpoint, auth, (), {})
+    return data, {"code": code}
+
+def trends_place(auth, **params):
+    """
+    Get the list of trends for the given place.
+    """
+
+    endpoint = "https://api.twitter.com/1.1/trends/place.json"
+    data, code = rest_call(endpoint, auth, (), params)
+    return data, {"code": code}

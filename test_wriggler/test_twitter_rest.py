@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 """
 Test the search_tweets api.
 """
@@ -172,3 +173,26 @@ def test_followers_ids_iter(samp_auth):
         assert len(results) >= 20
         assert len(set(results)) >= 20
 
+def test_trends_available(samp_auth):
+    """
+    Test the trends available api.
+    """
+
+    data, meta = rest.trends_available(samp_auth)
+    assert meta["code"] == 200
+    assert isinstance(data, list)
+    assert len(data) > 10
+    for place in data:
+        assert "woeid" in place
+
+def test_trends_place(samp_auth):
+    """
+    Test the trends api for places.
+    """
+
+    params = {"id": 1}
+    data, meta = rest.trends_place(samp_auth, **params)
+    assert meta["code"] == 200
+    for trend in data:
+        for obj in trend["trends"]:
+            assert "name" in obj
