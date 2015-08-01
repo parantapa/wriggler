@@ -45,6 +45,7 @@ def stream_call(endpoint, auth, params, method):
 
             # Try to sleep over the problem
             sleep(const.API_RETRY_AFTER)
+            continue
 
         # Loop over the lines
         try:
