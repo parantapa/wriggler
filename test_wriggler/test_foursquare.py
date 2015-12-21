@@ -24,7 +24,7 @@ def samp_key():
     Return the sample auth object.
     """
 
-    kfname = "fsq-test-key.json"
+    kfname = "test_key-fsq.json"
     with open(kfname) as fobj:
         key = json.load(fobj)
 

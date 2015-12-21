@@ -18,7 +18,7 @@ def samp_key():
     Return the sample auth object.
     """
 
-    kfname = "gsb-test-key.txt"
+    kfname = "test_key-gsb.txt"
     with open(kfname, "r") as fobj:
         key = fobj.read().strip()
     return key

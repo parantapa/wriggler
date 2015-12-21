@@ -22,7 +22,7 @@ def samp_auth():
     Return the sample auth object.
     """
 
-    kfname = "twitter-test-keys.json"
+    kfname = "test_keys-twitter.json"
     ath = auth.read_keys(kfname)
     return ath
 

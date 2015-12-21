@@ -24,7 +24,7 @@ def samp_key():
     Return the sample auth object.
     """
 
-    kfname = "azure-test-key.txt"
+    kfname = "test_key-azure.txt"
     with open(kfname) as fobj:
         key = fobj.read().strip()
 
