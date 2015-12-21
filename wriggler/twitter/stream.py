@@ -31,8 +31,20 @@ def stream_call(endpoint, auth, params, method):
         else:
             raise ValueError("Invalid value for parameter 'method'")
 
-        if r.status_code != 200:
-            # Dont expect anything else
+        if r.status_code == 200:
+            # Loop over the lines
+            try:
+                for line in r.iter_lines():
+                    if line:
+                        yield line
+            except ssl.SSLError as e:
+                log.info(u"ssl.SSLError - {}", e)
+            except httplib.IncompleteRead as e:
+                log.info(u"httplib.IncompleteRead - {}", e)
+            except Exception: # pylint: disable=broad-except
+                log.warn(u"Unexepectd exception", exc_info=True)
+
+        else: # Dont expect anything else
             msg = u"Unexepectd response - {0}".format(r.status_code)
             log.warn(msg)
             try:
@@ -45,19 +57,6 @@ def stream_call(endpoint, auth, params, method):
 
             # Try to sleep over the problem
             sleep(const.API_RETRY_AFTER)
-            continue
-
-        # Loop over the lines
-        try:
-            for line in r.iter_lines():
-                if line:
-                    yield line
-        except ssl.SSLError as e:
-            log.info(u"ssl.SSLError - {}", e)
-        except httplib.IncompleteRead as e:
-            log.info(u"httplib.IncompleteRead - {}", e)
-        except Exception: # pylint: disable=broad-except
-            log.warn(u"Unexepectd exception", exc_info=True)
 
 def statuses_filter(auth, **params):
     """
