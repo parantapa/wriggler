@@ -9,8 +9,8 @@ import wriggler.twitter.auth as auth
 import wriggler.twitter.rest as rest
 
 TEST_USERS = [
-    (813286, "BarackObama"),
-    (145125358, "SrBachchan")
+    (145125358, "SrBachchan"),
+    (762093631, "sig_chi")
 ]
 
 TEST_QUERY = ["news", "ff"]
@@ -196,3 +196,79 @@ def test_trends_place(samp_auth):
     for trend in data:
         for obj in trend["trends"]:
             assert "name" in obj
+
+def test_favorites_list(samp_auth):
+    """
+    Test the favorites/list method.
+    """
+
+    for user_id, screen_name in TEST_USERS:
+        params = {"user_id": user_id, "count": 10}
+        tweets, meta = rest.favorites_list(samp_auth, **params)
+        assert meta["code"] == 200
+        assert all("id" in t for t in tweets)
+        assert all("text" in t for t in tweets)
+
+        params = {"screen_name": screen_name, "count": 10}
+        tweets, meta = rest.statuses_user_timeline(samp_auth, **params)
+        assert meta["code"] == 200
+        assert all("id" in t for t in tweets)
+        assert all("text" in t for t in tweets)
+
+def test_favorites_list_iter(samp_auth):
+    """
+    Test the favorites_list method using id_iter.
+    """
+
+    for user_id, _ in TEST_USERS:
+        params = {"user_id": user_id, "count": 10, "maxitems": 20}
+        results = []
+        for tweets, meta in rest.favorites_list(samp_auth, **params):
+            assert meta["code"] == 200
+            results.extend(tweets)
+        assert all("id" in t for t in results)
+        assert all("text" in t for t in results)
+        assert len(results) >= 20
+        assert len(set(r["id"] for r in results)) >= 20
+
+def test_statuses_show(samp_auth):
+    """
+    Test the statuses/show method.
+    """
+
+    for user_id, _ in TEST_USERS:
+        # First get the last tweet id for a test user
+        params = {"user_id": user_id, "count": 1}
+        tweet, meta = rest.statuses_user_timeline(samp_auth, **params)
+        assert meta["code"] == 200
+
+        tweet = tweet[0]
+        assert tweet["user"]["id"] == user_id
+
+        # Next get the same tweet with statuses show
+        nparams = {"id": tweet["id"]}
+        ntweet, nmeta = rest.statuses_show(samp_auth, **nparams)
+        assert nmeta["code"] == 200
+        assert tweet["id"] == ntweet["id"]
+        assert tweet["text"] == ntweet["text"]
+
+def test_statuses_lookup(samp_auth):
+    """
+    Test the statuses/lookup method.
+    """
+
+    for user_id, _ in TEST_USERS:
+        # First get the last 10 tweet ids for a test user
+        params = {"user_id": user_id, "count": 10}
+        tweets, meta = rest.statuses_user_timeline(samp_auth, **params)
+        assert meta["code"] == 200
+        assert all(t["user"]["id"] == user_id for t in tweets)
+
+        # Create the list of tweet ids
+        tids = [t["id"] for t in tweets]
+
+        # Next get the same tweets using statues lookup
+        nparams = {"id": tids}
+        ntweets, nmeta = rest.statuses_lookup(samp_auth, **nparams)
+        assert nmeta["code"] == 200
+        assert set(tids) == set(t["id"] for t in ntweets)

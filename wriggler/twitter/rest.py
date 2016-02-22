@@ -321,3 +321,62 @@ def trends_place(auth, **params):
     endpoint = "https://api.twitter.com/1.1/trends/place.json"
     data, code = rest_call(endpoint, auth, (), params)
     return data, {"code": code}
+
+def favorites_list(auth, **params):
+    """
+    Get the most recent Tweets liked by the specified user.
+    """
+
+    maxitems = params.pop("maxitems", 0)
+    if maxitems > 0:
+        return id_iter(favorites_list, maxitems, auth, params)
+
+    endpoint = "https://api.twitter.com/1.1/favorites/list.json"
+    accept_codes = (403, 404)
+
+    params.setdefault("include_entities", 1)
+    params.setdefault("count", 200)
+
+    data, code = rest_call(endpoint, auth, accept_codes, params)
+    try:
+        max_id   = min(tweet["id"] for tweet in data) - 1
+        since_id = max(tweet["id"] for tweet in data)
+        count    = len(data)
+    except (ValueError, KeyError, TypeError):
+        max_id, since_id, count = None, None, 0
+
+    meta = {
+        "code":     code,
+        "max_id":   max_id,
+        "since_id": since_id,
+        "count":   count,
+    }
+
+    return data, meta
+
+def statuses_show(auth, **params):
+    """
+    Returns a single Tweet, specified by the id parameter.
+    """
+
+    endpoint = "https://api.twitter.com/1.1/statuses/show.json"
+    accept_codes = (403, 404)
+
+    params.setdefault("include_entities", 1)
+
+    data, code = rest_call(endpoint, auth, accept_codes, params)
+    return data, {"code": code}
+
+def statuses_lookup(auth, **params):
+    """
+    Returns tweet objects for up to 100 tweets per request.
+    """
+
+    endpoint = "https://api.twitter.com/1.1/statuses/lookup.json"
+    accept_codes = (403, 404)
+
+    params.setdefault("include_entities", 1)
+    params["id"] = list_to_csv(params["id"])
+
+    data, code = rest_call(endpoint, auth, accept_codes, params, method="post")
+    return data, {"code": code}
