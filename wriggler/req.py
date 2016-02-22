@@ -25,7 +25,7 @@ def robust_http(url, method, args, kwargs):
     assert method in ("get", "post")
 
     # Get the function to be called
-    session = kwargs.get("session", None)
+    session = kwargs.pop("session", None)
     if session is None:
         to_call = getattr(requests, method)
     else:

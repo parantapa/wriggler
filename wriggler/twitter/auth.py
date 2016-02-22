@@ -7,11 +7,10 @@ import time
 import json
 
 import arrow
-from dateutil.parser import parse
+import requests
+from requests_oauthlib import OAuth1
 
 from wriggler import log
-import wriggler.const as const
-
 from wriggler.check_rate_limit import check_rate_limit
 
 class MultiAuth(object):
@@ -28,13 +27,15 @@ class MultiAuth(object):
         self.keys = keys
         self.reset = [now] * len(keys)
 
+        self.session = requests.Session()
+
     @property
     def token(self):
-        """
-        Get a token for the call.
-        """
-
         return self.keys[self.idx]
+
+    @property
+    def oauth(self):
+        return OAuth1(signature_type="auth_header", **self.keys[self.idx])
 
     def check_limit(self, headers):
         """

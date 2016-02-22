@@ -4,8 +4,6 @@ Robust Twitter crawler primitives.
 
 import json
 
-from requests_oauthlib import OAuth1
-
 from wriggler import log, Error
 import wriggler.const as const
 import wriggler.req as req
@@ -108,14 +106,14 @@ def rest_call(endpoint, auth, accept_codes, params, method="get"):
     ## DEBUG
     # print(endpoint)
 
-    oauth = OAuth1(signature_type="auth_header", **auth.token)
+    args = {"auth": auth.oauth, "session": auth.session, "timeout": 60.0}
 
     tries = 0
     while tries < const.API_RETRY_MAX:
         if method == "get":
-            r = req.get(endpoint, params=params, auth=oauth, timeout=60.0)
+            r = req.get(endpoint, params=params, **args)
         elif method == "post":
-            r = req.post(endpoint, data=params, auth=oauth, timeout=60.0)
+            r = req.post(endpoint, data=params, **args)
         else:
             raise ValueError("Invalid value for parameter 'method'")
 
