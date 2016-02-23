@@ -380,3 +380,73 @@ def statuses_lookup(auth, **params):
 
     data, code = rest_call(endpoint, auth, accept_codes, params, method="post")
     return data, {"code": code}
+
+def lists_memberships(auth, **params):
+    """
+    Returns the lists the specified user has been added to.
+    """
+
+    maxitems = params.pop("maxitems", 0)
+    if maxitems > 0:
+        return cursor_iter(lists_memberships, maxitems, auth, params)
+
+    endpoint = "https://api.twitter.com/1.1/lists/memberships.json"
+    accept_codes = (403, 404)
+
+    params.setdefault("count", 1000)
+
+    data, code = rest_call(endpoint, auth, accept_codes, params)
+    try:
+        next_cursor = data["next_cursor"]
+        count = len(data["lists"])
+    except KeyError:
+        next_cursor, count = 0, 0
+
+    meta = {
+        "code": code,
+        "next_cursor": next_cursor,
+        "count": count,
+    }
+
+    return data, meta
+
+def lists_members(auth, **params):
+    """
+    Returns the members of the specified list.
+    """
+
+    maxitems = params.pop("maxitems", 0)
+    if maxitems > 0:
+        return cursor_iter(lists_members, maxitems, auth, params)
+
+    endpoint = "https://api.twitter.com/1.1/lists/members.json"
+    accept_codes = (403, 404)
+
+    params.setdefault("include_entities", 1)
+    params.setdefault("count", 5000)
+
+    data, code = rest_call(endpoint, auth, accept_codes, params)
+    try:
+        next_cursor = data["next_cursor"]
+        count = len(data["users"])
+    except KeyError:
+        next_cursor, count = 0, 0
+
+    meta = {
+        "code": code,
+        "next_cursor": next_cursor,
+        "count": count,
+    }
+
+    return data, meta
+
+def lists_show(auth, **params):
+    """
+    Returns the specified list.
+    """
+
+    endpoint = "https://api.twitter.com/1.1/lists/show.json"
+    accept_codes = (403, 404)
+
+    data, code = rest_call(endpoint, auth, accept_codes, params)
+    return data, {"code": code}

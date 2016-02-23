@@ -13,6 +13,11 @@ TEST_USERS = [
     (762093631, "sig_chi")
 ]
 
+TEST_LISTS = [
+    (2299490, "news", "mashable"),
+    (72905612, "healthcare", "cnnbrk")
+]
+
 TEST_QUERY = ["news", "ff"]
 
 @pytest.fixture
@@ -272,3 +277,122 @@ def test_statuses_lookup(samp_auth):
         ntweets, nmeta = rest.statuses_lookup(samp_auth, **nparams)
         assert nmeta["code"] == 200
         assert set(tids) == set(t["id"] for t in ntweets)
+
+def test_lists_memberships(samp_auth):
+    """
+    Test the lists/memberships method.
+    """
+
+    for user_id, screen_name in TEST_USERS:
+        params = {"user_id": user_id, "count": 10}
+        data, meta = rest.lists_memberships(samp_auth, **params)
+        assert meta["code"] == 200
+        assert "lists" in data
+        assert all("member_count" in l for l in data["lists"])
+        assert all("subscriber_count" in l for l in data["lists"])
+
+        params = {"screen_name": screen_name, "count": 10}
+        data, meta = rest.lists_memberships(samp_auth, **params)
+        assert meta["code"] == 200
+        assert "lists" in data
+        assert all("member_count" in l for l in data["lists"])
+        assert all("subscriber_count" in l for l in data["lists"])
+
+def test_lists_memberships_iter(samp_auth):
+    """
+    Test the lists/memberships method using cursor_iter.
+    """
+
+    for user_id, screen_name in TEST_USERS:
+        params = {"user_id": user_id, "count": 10, "maxitems": 20}
+        results = []
+        for data, meta in rest.lists_memberships(samp_auth, **params):
+            assert meta["code"] == 200
+            assert "lists" in data
+            results.extend(data["lists"])
+        assert all("member_count" in l for l in results)
+        assert all("subscriber_count" in l for l in results)
+        assert len(results) >= 20
+        assert len(set(r["id"] for r in results)) >= 20
+
+        params = {"screen_name": screen_name, "count": 10, "maxitems": 20}
+        results = []
+        for data, meta in rest.lists_memberships(samp_auth, **params):
+            assert meta["code"] == 200
+            assert "lists" in data
+            results.extend(data["lists"])
+        assert all("member_count" in l for l in results)
+        assert all("subscriber_count" in l for l in results)
+        assert len(results) >= 20
+        assert len(set(r["id"] for r in results)) >= 20
+
+def test_lists_show(samp_auth):
+    """
+    Test the lists_show method.
+    """
+
+    for list_id, slug, owner_screen_name in TEST_LISTS:
+        params = {"list_id": list_id}
+        lst, meta = rest.lists_show(samp_auth, **params)
+        assert meta["code"] == 200
+        assert lst["id"] == list_id
+        assert lst["slug"] == slug
+        assert lst["user"]["screen_name"] == owner_screen_name
+
+        params = {"slug": slug, "owner_screen_name": owner_screen_name}
+        lst, meta = rest.lists_show(samp_auth, **params)
+        assert meta["code"] == 200
+        assert lst["id"] == list_id
+        assert lst["slug"] == slug
+        assert lst["user"]["screen_name"] == owner_screen_name
+
+def test_lists_members(samp_auth):
+    """
+    Test the lists/members method.
+    """
+
+    for list_id, slug, owner_screen_name in TEST_LISTS:
+        params = {"list_id": list_id, "count": 10}
+        data, meta = rest.lists_members(samp_auth, **params)
+        assert meta["code"] == 200
+        assert "users" in data
+        assert all("screen_name" in u for u in data["users"])
+        assert all("listed_count" in u for u in data["users"])
+
+        params = {"slug": slug, "owner_screen_name": owner_screen_name}
+        data, meta = rest.lists_members(samp_auth, **params)
+        assert meta["code"] == 200
+        assert "users" in data
+        assert all("screen_name" in u for u in data["users"])
+        assert all("listed_count" in u for u in data["users"])
+
+def test_lists_members_iter(samp_auth):
+    """
+    Test the lists/memberships method using cursor_iter.
+    """
+
+    for list_id, slug, owner_screen_name in TEST_LISTS:
+        params = {"list_id": list_id, "count": 10, "maxitems": 20}
+        data, meta = rest.lists_members(samp_auth, **params)
+        results = []
+        for data, meta in rest.lists_members(samp_auth, **params):
+            assert meta["code"] == 200
+            assert "users" in data
+            results.extend(data["users"])
+        assert all("screen_name" in u for u in results)
+        assert all("listed_count" in u for u in results)
+        assert len(results) >= 20
+        assert len(set(r["id"] for r in results)) >= 20
+
+        params = {"slug": slug, "owner_screen_name": owner_screen_name,
+                  "count": 10, "maxitems": 20}
+        data, meta = rest.lists_members(samp_auth, **params)
+        results = []
+        for data, meta in rest.lists_members(samp_auth, **params):
+            assert meta["code"] == 200
+            assert "users" in data
+            results.extend(data["users"])
+        assert all("screen_name" in u for u in results)
+        assert all("listed_count" in u for u in results)
+        assert len(results) >= 20
+        assert len(set(r["id"] for r in results)) >= 20
