@@ -215,7 +215,7 @@ def test_favorites_list(samp_auth):
         assert all("text" in t for t in tweets)
 
         params = {"screen_name": screen_name, "count": 10}
-        tweets, meta = rest.statuses_user_timeline(samp_auth, **params)
+        tweets, meta = rest.favorites_list(samp_auth, **params)
         assert meta["code"] == 200
         assert all("id" in t for t in tweets)
         assert all("text" in t for t in tweets)
