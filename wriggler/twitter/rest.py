@@ -450,3 +450,33 @@ def lists_show(auth, **params):
 
     data, code = rest_call(endpoint, auth, accept_codes, params)
     return data, {"code": code}
+
+def statuses_retweeters_ids(auth, **params):
+    """
+    Returns a collection of up to 100 user IDs belonging to users
+    who have retweeted the tweet specified by the id parameter.
+    """
+
+    maxitems = params.pop("maxitems", 0)
+    if maxitems > 0:
+        return cursor_iter(statuses_retweeters_ids, maxitems, auth, params)
+
+    endpoint = "https://api.twitter.com/1.1/statuses/retweeters/ids.json"
+    accept_codes = (403, 404)
+
+    params.setdefault("stringify_ids", "false")
+
+    data, code = rest_call(endpoint, auth, accept_codes, params)
+    try:
+        next_cursor = data["next_cursor"]
+        count = len(data["ids"])
+    except KeyError:
+        next_cursor, count = 0, 0
+
+    meta = {
+        "code": code,
+        "next_cursor": next_cursor,
+        "count": count,
+    }
+
+    return data, meta

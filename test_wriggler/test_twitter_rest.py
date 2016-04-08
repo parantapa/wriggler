@@ -20,6 +20,13 @@ TEST_LISTS = [
 
 TEST_QUERY = ["news", "ff"]
 
+TEST_RETWEETED_TWEETS = [
+    718218948060143617, # https://twitter.com/SrBachchan/status/718218948060143617
+    718204766422048769, # https://twitter.com/SrBachchan/status/718204766422048769
+    717026378739290112, # https://twitter.com/POTUS/status/717026378739290112
+    714084384010272768, # https://twitter.com/POTUS/status/714084384010272768
+]
+
 @pytest.fixture
 def samp_auth():
     """
@@ -396,3 +403,29 @@ def test_lists_members_iter(samp_auth):
         assert all("listed_count" in u for u in results)
         assert len(results) >= 20
         assert len(set(r["id"] for r in results)) >= 20
+
+def test_statuses_retweeters_ids(samp_auth):
+    """
+    Test statuses/retweeters/ids method.
+    """
+
+    for retweeted_tweet_id in TEST_RETWEETED_TWEETS:
+        params = {"id": retweeted_tweet_id}
+        data, meta = rest.statuses_retweeters_ids(samp_auth, **params)
+        assert meta["code"] == 200
+        assert len(data["ids"]) >= 1
+
+def test_statuses_retweeters_ids_iter(samp_auth):
+    """
+    Test statuses/retweeters/ids method w/ cursor_iter.
+    """
+
+    for retweeted_tweet_id in TEST_RETWEETED_TWEETS:
+        params = {"id": retweeted_tweet_id, "maxitems": 200}
+        results = []
+        for data, meta in rest.statuses_retweeters_ids(samp_auth, **params):
+            assert meta["code"] == 200
+            assert len(data["ids"]) >= 10
+            results.extend(data["ids"])
+        assert len(results) >= 1
+        assert len(set(results)) >= 1
