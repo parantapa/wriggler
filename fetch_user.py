@@ -15,13 +15,16 @@ from wriggler.twitter.auth import read_keys
 from wriggler.twitter.rest import users_show
 
 def main():
-    _, uid = sys.argv
-    uid = int(uid)
+    _, user = sys.argv
+
+    try:
+        params = {"id": int(user)}
+    except ValueError:
+        params = {"screen_name": user}
 
     kfname = "test_keys-twitter.json"
     auth = read_keys(kfname)
 
-    params = {"id": uid}
     profile, meta = users_show(auth, **params)
     assert meta["code"] == 200
 
