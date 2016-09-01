@@ -10,11 +10,13 @@ import wriggler.twitter.auth as auth
 import wriggler.twitter.stream as stream
 
 TEST_USERS = [
-    (813286, "BarackObama"),
-    (145125358, "SrBachchan")
+    (759251, "CNN"),
+    (19701628, "BBC"),
+    (37034483, "ndtv"),
+    (1652541, "Reuters")
 ]
 
-TEST_QUERY = ["news", "ff"]
+TEST_QUERY = ["news", "follow"]
 
 @pytest.fixture
 def samp_auth():

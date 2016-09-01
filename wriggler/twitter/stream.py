@@ -84,4 +84,3 @@ def statuses_sample(auth):
     params = {"delimited": 0, "stall_warnings": 1}
 
     return stream_call(endpoint, auth, params, "get")
-

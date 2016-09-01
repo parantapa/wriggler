@@ -21,8 +21,8 @@ TEST_LISTS = [
 TEST_QUERY = ["news", "ff"]
 
 TEST_RETWEETED_TWEETS = [
-    718218948060143617, # https://twitter.com/SrBachchan/status/718218948060143617
-    718204766422048769, # https://twitter.com/SrBachchan/status/718204766422048769
+    # 718218948060143617, # https://twitter.com/SrBachchan/status/718218948060143617
+    # 718204766422048769, # https://twitter.com/SrBachchan/status/718204766422048769
     717026378739290112, # https://twitter.com/POTUS/status/717026378739290112
     714084384010272768, # https://twitter.com/POTUS/status/714084384010272768
 ]
@@ -429,3 +429,16 @@ def test_statuses_retweeters_ids_iter(samp_auth):
             results.extend(data["ids"])
         assert len(results) >= 1
         assert len(set(results)) >= 1
+
+def test_statuses_retweets_id(samp_auth):
+    """
+    Test statuses/retweets/id method.
+    """
+
+    for retweeted_tweet_id in TEST_RETWEETED_TWEETS:
+        params = {"id": retweeted_tweet_id}
+        data, meta = rest.statuses_retweets_id(samp_auth, **params)
+        assert meta["code"] == 200
+        assert len(data) >= 1
+        for tweet in data:
+            assert tweet["retweeted_status"]["id"] == retweeted_tweet_id

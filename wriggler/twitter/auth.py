@@ -6,11 +6,11 @@ import sys
 import time
 import json
 
-import arrow
 import requests
 from requests_oauthlib import OAuth1
 
 from wriggler import log
+import wriggler.const as const
 from wriggler.check_rate_limit import check_rate_limit
 
 class MultiAuth(object):
@@ -21,7 +21,7 @@ class MultiAuth(object):
     def __init__(self, keys):
         super(MultiAuth, self).__init__()
 
-        now = arrow.now().timestamp
+        now = int(time.time())
 
         self.idx = 0
         self.keys = keys
@@ -42,7 +42,7 @@ class MultiAuth(object):
         Check if rate limit is hit for the current key.
         """
 
-        now = arrow.now().timestamp
+        now = int(time.time())
         sleep_time = check_rate_limit(headers)
 
         if sleep_time:
@@ -59,6 +59,27 @@ class MultiAuth(object):
             if self.reset[self.idx] > now:
                 log.debug("Key {} still in rate limit ...", self.idx)
                 time.sleep(self.reset[self.idx] - now)
+
+    def skip_key(self):
+        """
+        Skip the current key.
+        """
+
+        log.debug("Skipping key {} ...", self.idx)
+
+        now = int(time.time())
+
+        # Save the reset time
+        self.reset[self.idx] = now + const.API_RETRY_AFTER
+
+        # Move on to the next key
+        self.idx = (self.idx + 1) % len(self.keys)
+
+        # If the next key is under ratelimit,
+        # sleep off the rate limit window
+        if self.reset[self.idx] > now:
+            log.debug("Key {} still in rate limit ...", self.idx)
+            time.sleep(self.reset[self.idx] - now)
 
 def chunks(l, n):
     """
@@ -92,4 +113,3 @@ def read_keys_split(fname, size=sys.maxsize):
     auths = [MultiAuth(k) for k in ks]
 
     return auths
-
