@@ -41,7 +41,7 @@ def rest_call(endpoint, auth, params, method="get"):
 
             return (data, r.status_code, 0)
 
-        log.info(u"Try L1 {}: Received error")
+        log.info(u"Try L1 {}: Received error", tries)
         todo, status_code, error_code = ec.get_error_todo(r)
         if todo is ec.RETRY:
             auth.check_limit(r.headers)
@@ -52,6 +52,11 @@ def rest_call(endpoint, auth, params, method="get"):
             tries += 1
             continue
         elif todo is ec.GIVEUP:
+            try:
+                data = r.json()
+            except ValueError:
+                data = {"response_text": r.text}
+
             return (data, status_code, error_code)
         else:
             raise RuntimeError("This should not be reached!")
