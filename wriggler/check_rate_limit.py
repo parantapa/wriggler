@@ -5,9 +5,9 @@ Common ratelimit check code used by Foursquare and Twitter.
 
 from __future__ import division, print_function
 
-import arrow
-from dateutil.parser import parse
+import calendar
 
+from dateutil.parser import parse
 import wriggler.const as const
 
 def get_remaining(headers):
@@ -54,8 +54,10 @@ def get_server_time(headers):
     # Get the server time.
     try:
         server_time = headers["date"]
+        print(server_time)
         server_time = parse(server_time)
-        server_time = arrow.get(server_time).timestamp
+        print(server_time)
+        server_time = calendar.timegm(server_time.timetuple())
     except (KeyError, ValueError):
         return None
 

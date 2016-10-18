@@ -5,9 +5,6 @@ Foursquare API
 import time
 import pprint
 
-import arrow
-from dateutil.parser import parse
-
 from wriggler import log, Error
 import wriggler.const as const
 import wriggler.req as req
