@@ -3,10 +3,13 @@ API for Google Safe Browsing Lookup API
 """
 
 import time
+import logbook
 
-from wriggler import log, Error
+from wriggler import Error
 import wriggler.const as const
 import wriggler.req as req
+
+log = logbook.Logger(__name__)
 
 CLIENT = "wriggler.gsb"
 PVER = 3.0

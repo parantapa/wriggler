@@ -6,7 +6,9 @@ https://dev.twitter.com/overview/api/response-codes
 Accessed on: September 01, 2016
 """
 
-from wriggler import log
+import logbook
+
+log = logbook.Logger(__name__)
 
 # Logic on code
 RETRY = 1

@@ -6,12 +6,14 @@ import sys
 import time
 import json
 
+import logbook
 import requests
 from requests_oauthlib import OAuth1
 
-from wriggler import log
 import wriggler.const as const
 from wriggler.check_rate_limit import check_rate_limit
+
+log = logbook.Logger(__name__)
 
 class MultiAuth(object):
     """

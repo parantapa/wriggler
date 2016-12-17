@@ -6,12 +6,14 @@ import ssl
 import httplib
 from time import sleep
 
+import logbook
 from requests_oauthlib import OAuth1
 
-from wriggler import log
 from wriggler.twitter import list_to_csv
 import wriggler.const as const
 import wriggler.req as req
+
+log = logbook.Logger(__name__)
 
 def stream_call(endpoint, auth, params, method):
     """

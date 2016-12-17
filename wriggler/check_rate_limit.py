@@ -7,8 +7,12 @@ from __future__ import division, print_function
 
 import calendar
 
+import logbook
 from dateutil.parser import parse
+
 import wriggler.const as const
+
+log = logbook.Logger(__name__)
 
 def get_remaining(headers):
     """

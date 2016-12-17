@@ -5,10 +5,14 @@ Foursquare API
 import time
 import pprint
 
-from wriggler import log, Error
+import logbook
+
+from wriggler import Error
 import wriggler.const as const
 import wriggler.req as req
 from wriggler.check_rate_limit import check_rate_limit
+
+log = logbook.Logger(__name__)
 
 VERSION = 20150425
 MODE = "foursquare"

@@ -1,5 +1,5 @@
-test_key*
+Wriggler.egg-info/
 .cache
 .coverage
 htmlcov/
-xx/
+test_key*

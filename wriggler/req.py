@@ -6,11 +6,15 @@ connection requests and server side errors. The error handling strategy
 is quite simple. Wait for fixed number of seconds on error and then retry.
 """
 
-import requests
 from time import sleep
 
-from wriggler import log, Error
+import requests
+import logbook
+
+from wriggler import Error
 import wriggler.const as const
+
+log = logbook.Logger(__name__)
 
 class ConnectFailError(Error):
     """

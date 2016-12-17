@@ -2,11 +2,15 @@
 Robust Twitter crawler primitives.
 """
 
-from wriggler import log, Error
+import logbook
+
+from wriggler import Error
 import wriggler.const as const
 import wriggler.req as req
 import wriggler.twitter.error_codes as ec
 from wriggler.twitter import list_to_csv
+
+log = logbook.Logger(__name__)
 
 def rest_call(endpoint, auth, params, method="get"):
     """

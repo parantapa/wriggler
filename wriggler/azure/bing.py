@@ -5,11 +5,14 @@ API for BingSearch Web
 import time
 from base64 import b64encode
 
-from wriggler import log
+import logbook
+
 import wriggler.const as const
 import wriggler.req as req
 
 from wriggler.azure import AzureError
+
+log = logbook.Logger(__name__)
 
 ENDPOINT = "https://api.datamarket.azure.com/Bing/SearchWeb/v1/Web"
 
