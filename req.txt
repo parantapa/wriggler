@@ -1,6 +1,0 @@
-logbook
-python-dateutil
-requests
-requests-oauthlib
-# pytest
-
