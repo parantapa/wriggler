@@ -1,5 +1,6 @@
 Wriggler.egg-info/
 .cache
 .coverage
+venv/
 htmlcov/
 test_key*
